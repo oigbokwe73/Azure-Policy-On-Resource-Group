@@ -188,4 +188,178 @@ module "tagging_policy" {
    terraform apply
    ```
 
-With this setup, you now have a reusable Terraform module for creating tagging policies, which can be applied to different resources and scopes by simply calling the module and passing different variables.
+
+To pass an array of `tag_key` values to enforce multiple required tags in the Azure Policy, we need to modify both the module and the policy definition. Terraform's `jsonencode` function can handle arrays, so we can adjust the policy to loop through each tag in the array and check for their existence.
+
+Here’s how you can update the module and main script to support passing an array of tags.
+
+### Step 1: Update the Module to Support an Array of `tag_key`
+
+#### `main.tf` (Inside `modules/tagging-policy/`)
+
+We modify the `policy_rule` to loop through the tags array and ensure that all tags exist. 
+
+```hcl
+# Create Policy Definition to enforce multiple tags
+resource "azurerm_policy_definition" "tagging_policy" {
+  name         = var.policy_name
+  policy_type  = "Custom"
+  mode         = "Indexed"
+  display_name = var.display_name
+  description  = var.description
+
+  # The policy rule will check if any tag from the array does not exist, and if so, deny the resource creation
+  policy_rule = jsonencode({
+    "if" : {
+      "anyOf" : [
+        for tag in var.tag_keys : {
+          "not" : {
+            "field" : "tags[${tag}]",
+            "exists" : true
+          }
+        }
+      ]
+    },
+    "then" : {
+      "effect" : "deny"
+    }
+  })
+
+  metadata = jsonencode({
+    "version" : "1.0.0",
+    "category": "Tags"
+  })
+}
+
+# Assign the policy to the specified scope
+resource "azurerm_policy_assignment" "tagging_policy_assignment" {
+  name                 = var.assignment_name
+  policy_definition_id = azurerm_policy_definition.tagging_policy.id
+  scope                = var.scope
+  display_name         = var.assignment_display_name
+  description          = var.assignment_description
+
+  # Since we are using multiple tags, there is no specific parameter needed for this part.
+  # However, this can be adapted if we need to specify parameters per tag key.
+  parameters = jsonencode({
+    "tagKeys" : {
+      "value" : var.tag_keys
+    }
+  })
+}
+```
+
+### Step 2: Update the `variables.tf` to Support an Array
+
+We modify the `variables.tf` file to define `tag_keys` as a list of strings.
+
+#### `variables.tf` (Inside `modules/tagging-policy/`)
+
+```hcl
+# Define variables for the tagging policy module
+
+variable "policy_name" {
+  description = "The name of the policy"
+  type        = string
+}
+
+variable "display_name" {
+  description = "The display name of the policy"
+  type        = string
+}
+
+variable "description" {
+  description = "Description of the policy"
+  type        = string
+}
+
+variable "tag_keys" {
+  description = "A list of tag keys that must be enforced"
+  type        = list(string)
+}
+
+variable "assignment_name" {
+  description = "Name of the policy assignment"
+  type        = string
+}
+
+variable "scope" {
+  description = "The scope at which the policy should be enforced"
+  type        = string
+}
+
+variable "assignment_display_name" {
+  description = "The display name of the policy assignment"
+  type        = string
+}
+
+variable "assignment_description" {
+  description = "Description of the policy assignment"
+  type        = string
+}
+```
+
+### Step 3: Use the Module and Pass an Array of Tags
+
+Now in your main script, you can pass an array of tag keys.
+
+#### `main.tf` (At the root level)
+
+```hcl
+provider "azurerm" {
+  features {}
+}
+
+# Create Resource Group
+resource "azurerm_resource_group" "rg" {
+  name     = "example-resource-group"
+  location = "East US"
+  
+  tags = {
+    environment = "production"
+    owner       = "operations"
+  }
+}
+
+# Call the tagging policy module, passing an array of tags
+module "tagging_policy" {
+  source                  = "./modules/tagging-policy"
+  policy_name             = "require-tags"
+  display_name            = "Require specific tags on all resources"
+  description             = "This policy enforces that specific tags are provided on all resources."
+  
+  # Pass an array of tags
+  tag_keys                = ["environment", "owner"]
+  
+  assignment_name         = "require-tags-assignment"
+  scope                   = azurerm_resource_group.rg.id
+  assignment_display_name = "Require multiple tags"
+  assignment_description  = "This policy assignment ensures that all resources in the group have the specified tags."
+}
+```
+
+### Explanation:
+
+1. **Policy Rule**: The updated policy rule checks each tag in the array (`tag_keys`). If any of the tags don't exist on the resource, it denies the creation of the resource.
+   
+2. **Array of Tags**: In the root-level script, you can pass an array of tags to the `tag_keys` parameter. For example: `["environment", "owner"]`.
+
+3. **Looping in Policy Rule**: The `anyOf` clause is used to ensure that if any of the tags in the array is missing, the policy will be triggered and deny the resource creation.
+
+### Step 4: How to Run
+
+1. Navigate to the root folder (`terraform/`).
+2. Initialize Terraform:
+   ```bash
+   terraform init
+   ```
+3. Run Terraform plan:
+   ```bash
+   terraform plan
+   ```
+4. Apply the configuration:
+   ```bash
+   terraform apply
+   ```
+
+This will enforce that resources in the resource group must have both the `environment` and `owner` tags (or any other tags you specify).
