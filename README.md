@@ -24,43 +24,63 @@ First, you'll create a module that encapsulates the logic for creating a policy 
 This file defines the logic for creating the policy definition and assigning it.
 
 ```hcl
-# Create Policy Definition to enforce tagging
+# Create Policy Definition to enforce multiple tags
 resource "azurerm_policy_definition" "tagging_policy" {
   name         = var.policy_name
   policy_type  = "Custom"
   mode         = "Indexed"
   display_name = var.display_name
   description  = var.description
+  
 
-  policy_rule = jsonencode({
-    "if" : {
-      "not" : {
-        "field" : "tags.${var.tag_key}",
-        "exists" : true
+
+
+  # The policy rule will check if any tag from the array does not exist, and if so, deny the resource creation
+   policy_rule = <<POLICY_RULE
+    {
+    "if": {
+      "not": {
+        "field": "Tags",
+        "in": "[parameters('tagmyKeys')]"
       }
     },
-    "then" : {
-      "effect" : "deny"
+    "then": {
+      "effect": "Deny"
     }
-  })
+  }
+POLICY_RULE
 
   metadata = jsonencode({
     "version" : "1.0.0",
     "category": "Tags"
   })
+  parameters = <<PARAMETERS
+    {
+    "tagmyKeys": {
+      "type": "Array",
+      "metadata": {
+        "description": "The list of allowed tags for resources.",
+        "displayName": "Allowed tags",
+        "strongType": "Tags"
+      }
+    }
+  }
+PARAMETERS
 }
 
 # Assign the policy to the specified scope
-resource "azurerm_policy_assignment" "tagging_policy_assignment" {
+resource "azurerm_resource_group_policy_assignment" "tagging_policy_assignment" {
   name                 = var.assignment_name
   policy_definition_id = azurerm_policy_definition.tagging_policy.id
-  scope                = var.scope
+  resource_group_id    = var.scope
   display_name         = var.assignment_display_name
   description          = var.assignment_description
 
+  # Since we are using multiple tags, there is no specific parameter needed for this part.
+  # However, this can be adapted if we need to specify parameters per tag key.
   parameters = jsonencode({
-    "tagName" : {
-      "value" : var.tag_key
+    "tagmyKeys" : {
+      "value" : var.tag_keys
     }
   })
 }
@@ -132,7 +152,10 @@ Now that the module is ready, we’ll update the main Terraform script to use th
 #### `main.tf` (At the root level)
 
 ```hcl
+
 provider "azurerm" {
+    
+subscription_id = "4501a4d3-74c8-4703-9948-8c405a64daf0"
   features {}
 }
 
@@ -143,20 +166,24 @@ resource "azurerm_resource_group" "rg" {
   
   tags = {
     environment = "production"
+    owner       = "operations"
   }
 }
 
-# Call the tagging policy module
+# Call the tagging policy module, passing an array of tags
 module "tagging_policy" {
   source                  = "./modules/tagging-policy"
   policy_name             = "require-tags"
-  display_name            = "Require a specific tag on all resources"
-  description             = "This policy enforces that a 'environment' tag is provided on all resources."
-  tag_key                 = "environment"
+  display_name            = "Require specific tags on all resources"
+  description             = "This policy enforces that specific tags are provided on all resources."
+  
+  # Pass an array of tags
+  tag_keys                = ["environment", "owner"]
+  
   assignment_name         = "require-tags-assignment"
   scope                   = azurerm_resource_group.rg.id
-  assignment_display_name = "Require environment tag"
-  assignment_description  = "This policy assignment ensures that all resources in the group have the 'environment' tag."
+  assignment_display_name = "Require multiple tags"
+  assignment_description  = "This policy assignment ensures that all resources in the group have the specified tags."
 }
 ```
 
