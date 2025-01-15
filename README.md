@@ -1,4 +1,82 @@
+Below is an example of a Terraform module to create an Azure subscription and retrieve its output:
+
+### Pre-requisites
+- Ensure you have permissions to create Azure subscriptions.
+- Terraform and Azure CLI are properly installed and configured.
+
+### Terraform Module for Azure Subscription
+```hcl
+# Create a new directory for the module and save this file as main.tf
+
+provider "azurerm" {
+  features {}
+}
+
+# Variables for Subscription Creation
+variable "billing_scope" {
+  description = "The billing account or enrollment account ID."
+  type        = string
+}
+
+variable "subscription_display_name" {
+  description = "The display name for the new subscription."
+  type        = string
+}
+
+# Resource: Azure Subscription
+resource "azurerm_subscription" "new_subscription" {
+  billing_scope          = var.billing_scope
+  display_name           = var.subscription_display_name
+}
+
+# Output the Subscription ID
+output "subscription_id" {
+  description = "The ID of the newly created Azure Subscription."
+  value       = azurerm_subscription.new_subscription.subscription_id
+}
+
+output "subscription_name" {
+  description = "The display name of the newly created Azure Subscription."
+  value       = azurerm_subscription.new_subscription.display_name
+}
+```
+
+### Usage Example
+1. Save the module in a directory called `azure_subscription`.
+2. Create a `main.tf` file outside the module for invoking it:
+   ```hcl
+   module "create_subscription" {
+     source                  = "./azure_subscription"
+     billing_scope           = "YOUR_BILLING_ACCOUNT_ID"
+     subscription_display_name = "NewSubscriptionName"
+   }
+
+   output "created_subscription_id" {
+     value = module.create_subscription.subscription_id
+   }
+
+   output "created_subscription_name" {
+     value = module.create_subscription.subscription_name
+   }
+   ```
+
+3. Run the following Terraform commands:
+   ```bash
+   terraform init
+   terraform plan
+   terraform apply
+   ```
+
+4. Terraform will create the subscription and output its `ID` and `name`.
+
+### Notes
+- Replace `YOUR_BILLING_ACCOUNT_ID` with your actual Azure billing scope.
+- Azure Subscription creation may require specific permissions. Make sure your service principal or Azure CLI credentials have adequate rights.
+
+Let me know if you need more details or assistance!
+
 # Azure-Policy-On-Resource-Group
+
 
 
 To make the **Policy Definition for Tagging** a reusable Terraform module, you can structure your Terraform code into two parts: the module definition and the main script that uses the module. I'll guide you step by step to create the module and update the main script accordingly.
