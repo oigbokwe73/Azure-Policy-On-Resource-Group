@@ -1,3 +1,76 @@
+Here’s a PowerShell script to create a new subscription and add it to a management group in Azure. It includes commands to locate the billing account name dynamically. Make sure you have the required permissions to perform these actions.
+
+---
+
+### **PowerShell Script**
+
+```powershell
+# Log in to Azure
+Connect-AzAccount
+
+# Variables - Update these values
+$SubscriptionDisplayName = "NewSubscriptionName"  # Set your desired subscription name
+$ManagementGroupName = "ManagementGroupName"     # Set your target management group name
+
+# Step 1: Retrieve the Billing Account Name
+Write-Host "Retrieving billing account information..."
+$BillingAccount = Get-AzBillingAccount
+if ($BillingAccount.Count -eq 0) {
+    Write-Host "No billing accounts found. Ensure you have sufficient permissions." -ForegroundColor Red
+    exit
+}
+Write-Host "Billing Account Name: " $BillingAccount[0].Name
+
+# Step 2: Create a New Subscription
+$BillingAccountName = $BillingAccount[0].Name
+$NewSubscription = New-AzSubscription -BillingAccountName $BillingAccountName -DisplayName $SubscriptionDisplayName
+
+if ($NewSubscription -eq $null) {
+    Write-Host "Failed to create subscription. Ensure proper permissions and inputs." -ForegroundColor Red
+    exit
+}
+
+Write-Host "Subscription Created: " $NewSubscription.SubscriptionId
+
+# Step 3: Add the Subscription to a Management Group
+Write-Host "Adding subscription to the management group..."
+$SubscriptionId = $NewSubscription.SubscriptionId
+Add-AzManagementGroupSubscription -GroupId $ManagementGroupName -SubscriptionId $SubscriptionId
+
+Write-Host "Subscription successfully added to management group: $ManagementGroupName" -ForegroundColor Green
+```
+
+---
+
+### **Prerequisites**
+1. **Azure PowerShell Module**:
+   - Ensure you have the **Azure PowerShell Module** installed.
+   - To install, run:
+     ```powershell
+     Install-Module -Name Az -AllowClobber -Scope CurrentUser
+     ```
+   - Import it if needed:
+     ```powershell
+     Import-Module Az
+     ```
+
+2. **Permissions**:
+   - **Create Subscription**: Requires permissions on the billing account (e.g., **Owner**, **Contributor**).
+   - **Management Group**: Requires **Owner** or **Contributor** on the management group.
+
+---
+
+### **What It Does**
+1. Connects to your Azure account.
+2. Retrieves the billing account name dynamically.
+3. Creates a new subscription under the billing account.
+4. Adds the subscription to the specified management group.
+
+---
+
+Let me know if you encounter any issues or need further modifications!
+
+
 Below is an example of a Terraform module to create an Azure subscription and retrieve its output:
 
 ### Pre-requisites
