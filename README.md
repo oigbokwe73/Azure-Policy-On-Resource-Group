@@ -1,5 +1,85 @@
 Here’s a PowerShell script to create a new subscription and add it to a management group in Azure. It includes commands to locate the billing account name dynamically. Make sure you have the required permissions to perform these actions.
 
+
+Creating a new Azure subscription using Terraform involves leveraging the Azure Management Groups and the Azure Subscription API. Below is a detailed Terraform script to create a new Azure subscription and associate it with a Management Group.
+
+### Prerequisites:
+1. Ensure you have the required permissions to create Azure subscriptions (e.g., "Owner" or "Contributor" role at the tenant level).
+2. Install Terraform CLI.
+3. Set up the Azure CLI and authenticate to your Azure account.
+4. Register the `Microsoft.Subscription` resource provider in your Azure tenant.
+
+### Terraform Script
+
+This script provisions a new subscription under a specified management group.
+
+```hcl
+provider "azurerm" {
+  features {}
+  subscription_id = "<Management_Subscription_ID>" # Replace with the ID of the management subscription
+}
+
+resource "azurerm_client_config" "current" {}
+
+# Define the management group where the subscription will be associated
+resource "azurerm_management_group" "example" {
+  name        = "example-management-group"
+  display_name = "Example Management Group"
+}
+
+# Create a new Azure subscription
+resource "azurerm_subscription" "new_subscription" {
+  subscription_name   = "Example Subscription"  # Name of the new subscription
+  billing_scope_id    = "<BillingScopeID>"      # Replace with your billing account ID
+  management_group_id = azurerm_management_group.example.id
+  subscription_alias  = "example-subscription-alias"
+}
+
+# Output the new subscription details
+output "new_subscription_id" {
+  value = azurerm_subscription.new_subscription.id
+}
+
+output "new_subscription_alias" {
+  value = azurerm_subscription.new_subscription.subscription_alias
+}
+```
+
+### Explanation of the Script:
+1. **Provider Configuration**: 
+   - The `azurerm` provider is configured with a subscription ID that has permissions to create subscriptions.
+
+2. **Management Group**:
+   - Creates or references a management group under which the new subscription will be added.
+
+3. **Subscription Resource**:
+   - The `azurerm_subscription` resource is used to create a new Azure subscription. You need to specify the `billing_scope_id` from your Azure billing account.
+
+4. **Outputs**:
+   - Outputs the `subscription_id` and `subscription_alias` for reference after the subscription is created.
+
+### Steps to Execute:
+1. Save the script to a file, e.g., `main.tf`.
+2. Initialize Terraform in the script's directory:
+   ```bash
+   terraform init
+   ```
+3. Review the execution plan:
+   ```bash
+   terraform plan
+   ```
+4. Apply the configuration to create the subscription:
+   ```bash
+   terraform apply
+   ```
+
+### Notes:
+- Replace `<Management_Subscription_ID>` with the ID of the subscription that manages your Azure resources.
+- Replace `<BillingScopeID>` with your Azure billing account ID. You can find this in the Azure portal under **Cost Management + Billing**.
+- Ensure the management group name (`example-management-group`) is unique or corresponds to an existing group in your environment.
+
+Would you like a diagram to visualize this setup?
+
 ---
 
 ### **PowerShell Script**
