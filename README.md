@@ -1,4 +1,114 @@
 
+### **Creating a Pay-As-You-Go Subscription Using Terraform & Microsoft Graph API**
+Since **Azure does not support creating a Pay-As-You-Go subscription via Terraform or the Azure CLI**, the workaround is to use **Microsoft Graph API** with Terraform to automate subscription creation.
+
+---
+
+## **🚀 Steps to Create a Pay-As-You-Go Subscription Using Terraform & Graph API**
+1. **Register an App in Microsoft Entra ID (Azure AD)**
+2. **Grant API Permissions to the App**
+3. **Use Terraform to Call Microsoft Graph API** to create the subscription.
+
+---
+
+### **🛠 Step 1: Register an App in Microsoft Entra ID**
+1. Navigate to [Microsoft Entra Admin Center](https://entra.microsoft.com).
+2. Go to **App registrations > New registration**.
+3. Give it a name (e.g., `"SubscriptionCreatorApp"`).
+4. Choose **Accounts in this organizational directory only**.
+5. Click **Register**.
+6. Note down the **Application (Client) ID** and **Directory (Tenant) ID**.
+
+---
+
+### **🔑 Step 2: Assign API Permissions**
+1. Open your registered app.
+2. Go to **API Permissions > Add Permission**.
+3. Select **Microsoft Graph > Application Permissions**.
+4. Search and add:
+   - `Subscription.ReadWrite.All`
+   - `Directory.Read.All`
+   - `Billing.ReadWrite`
+5. Click **Grant admin consent**.
+
+---
+
+### **🔐 Step 3: Create a Client Secret**
+1. Navigate to **Certificates & Secrets**.
+2. Click **New client secret**.
+3. Copy the **secret value** (it will be needed in Terraform).
+
+---
+
+### **📌 Step 4: Create a Terraform Configuration to Call Microsoft Graph API**
+Now, we use Terraform’s `http` provider to make an API request to **Microsoft Graph** to create a new subscription.
+
+#### **🌍 Terraform Configuration**
+```hcl
+provider "azuread" {
+  tenant_id = "<your-tenant-id>"
+}
+
+provider "http" {}
+
+resource "null_resource" "create_subscription" {
+  provisioner "local-exec" {
+    command = <<EOT
+    curl -X POST https://graph.microsoft.com/v1.0/subscriptions \
+      -H "Authorization: Bearer $(az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv)" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "displayName": "My Pay-As-You-Go Subscription",
+        "skuId": "0001",
+        "billingAccountId": "/providers/Microsoft.Billing/billingAccounts/{billingAccountId}",
+        "invoiceSectionId": "/providers/Microsoft.Billing/billingAccounts/{billingAccountId}/invoiceSections/{invoiceSectionId}"
+      }'
+    EOT
+  }
+  
+  triggers = {
+    always_run = timestamp()
+  }
+}
+```
+
+---
+
+### **🔎 Explanation**
+- This Terraform script **calls Microsoft Graph API** to create a new Azure **Pay-As-You-Go subscription**.
+- `skuId: "0001"` represents **Pay-As-You-Go**, but you need to confirm this in your billing account.
+- `{billingAccountId}` and `{invoiceSectionId}` must be replaced with actual **billing details** (found in **Azure Cost Management & Billing**).
+
+---
+
+### **🚀 Running the Terraform Script**
+```sh
+terraform init
+terraform apply -auto-approve
+```
+
+---
+
+### **🛠 Debugging & Verification**
+To check if the subscription was created:
+```sh
+az account list --output table
+```
+or
+```sh
+az graph query -q "Resources | where type == 'microsoft.billing/subscriptions'"
+```
+
+---
+
+### **🎯 Final Notes**
+✅ **Terraform + Graph API can automate Pay-As-You-Go subscription creation** for **Enterprise Agreement (EA) and CSP customers**.  
+❌ **Pay-As-You-Go cannot be created via Terraform for individual users**—it must be done via the Azure Portal.  
+💡 **Billing accounts must be pre-configured** for API-based subscription creation.  
+
+Would you like me to refine the Terraform script based on your **specific billing details**? 😊
+
+
 The `null_resource` resource in Terraform is used to define actions or dependencies that are not directly tied to a specific cloud resource but still need to be managed within your Terraform configuration. A common use case for `null_resource` is to execute provisioning logic using `local-exec` or `remote-exec` provisioners or to create dependencies between resources that are otherwise not linked.
 
 ### Example: Creating a Subscription with `null_resource`
