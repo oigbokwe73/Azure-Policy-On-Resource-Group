@@ -1,4 +1,84 @@
+Here’s an example of using the `<<EOT` syntax in Terraform to execute a multi-line command, specifically for creating a subscription using the **Azure REST API** via the Azure CLI.
 
+---
+
+### Example Script: Creating a Subscription with Azure REST API in Terraform
+
+```hcl
+provider "azurerm" {
+  features {}
+}
+
+resource "null_resource" "create_subscription" {
+  provisioner "local-exec" {
+    command = <<EOT
+    az rest --method post \
+    --url "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/<Billing_Account_ID>/providers/Microsoft.Subscription/createSubscription?api-version=2020-10-01" \
+    --body '{
+      "displayName": "Example Subscription",
+      "skuId": "0001",  # Subscription SKU (e.g., Pay-As-You-Go)
+      "billingScope": "/providers/Microsoft.Billing/billingAccounts/<Billing_Account_ID>/billingProfiles/<Billing_Profile_ID>"
+    }' \
+    --headers "Content-Type=application/json"
+    EOT
+  }
+}
+
+output "subscription_creation_status" {
+  value = "Subscription creation initiated. Please verify in the Azure portal."
+}
+```
+
+---
+
+### Explanation of Key Elements:
+1. **Provisioner `local-exec`**:
+   - Executes a shell command during the Terraform deployment process.
+
+2. **`<<EOT` Syntax**:
+   - Used for multi-line strings in Terraform, making it easier to include complex scripts or JSON payloads.
+
+3. **Azure CLI Command**:
+   - **`az rest`**: Calls the Azure REST API directly from the CLI.
+   - **`--method post`**: Specifies the HTTP method for the REST call.
+   - **`--url`**: Points to the Azure Subscription API endpoint.
+   - **`--body`**: Supplies the payload in JSON format, which contains the details of the subscription to be created.
+   - **`--headers`**: Adds the `Content-Type` header to specify the request body format.
+
+4. **Variables to Replace**:
+   - `<Billing_Account_ID>`: The ID of your Azure billing account.
+   - `<Billing_Profile_ID>`: The billing profile ID within your billing account.
+
+---
+
+### How to Run:
+1. Replace `<Billing_Account_ID>` and `<Billing_Profile_ID>` with actual IDs from your Azure billing account.
+2. Save the script to a Terraform file, e.g., `main.tf`.
+3. Run the following Terraform commands:
+   ```bash
+   terraform init
+   terraform apply
+   ```
+
+---
+
+### Example REST API Payload:
+Here's an example JSON body sent in the REST API call:
+```json
+{
+  "displayName": "Example Subscription",
+  "skuId": "0001",
+  "billingScope": "/providers/Microsoft.Billing/billingAccounts/<Billing_Account_ID>/billingProfiles/<Billing_Profile_ID>"
+}
+```
+
+---
+
+### Additional Notes:
+- After running this script, the subscription creation request is sent, but provisioning the subscription may take some time. Check the Azure portal for updates.
+- Ensure the Service Principal or user running the Terraform script has appropriate permissions for the Billing Account.
+
+Would you like help retrieving your `<Billing_Account_ID>` or `<Billing_Profile_ID>`?
 ### **Creating a Pay-As-You-Go Subscription Using Terraform & Microsoft Graph API**
 Since **Azure does not support creating a Pay-As-You-Go subscription via Terraform or the Azure CLI**, the workaround is to use **Microsoft Graph API** with Terraform to automate subscription creation.
 
