@@ -1,3 +1,115 @@
+### **Creating an Enterprise Agreement (EA) Subscription with a Service Principal in Azure**
+Creating an **Enterprise Agreement (EA) Subscription** using a **Service Principal** requires configuring permissions and using the appropriate Azure APIs or automation tools.
+
+---
+
+## **Step 1: Ensure Prerequisites**
+Before a Service Principal can create an EA subscription, you need:
+- An **Enterprise Agreement (EA) Account**.
+- **Enterprise Admin** or **Department Admin** permissions in the **EA Portal**.
+- A **Service Principal (SPN) with the required role assignments**.
+- Access to **Azure REST APIs** or **PowerShell/Azure CLI**.
+
+---
+
+## **Step 2: Assign Permissions to the Service Principal**
+The Service Principal must be assigned **"Enrollment Account Contributor"** and **"Owner"** at the management group level.
+
+### **1. Create a Service Principal (If Not Already Created)**
+If you don’t have a Service Principal, create one using Azure CLI:
+
+```bash
+az ad sp create-for-rbac --name "EA-Subscription-SP" --role "Enrollment Account Contributor" --scopes "/providers/Microsoft.Billing/enrollmentAccounts/{enrollmentAccountId}"
+```
+- Save the **Client ID, Secret, and Tenant ID** for later use.
+
+---
+
+### **2. Assign Enterprise Admin Permissions**
+1. **Sign in to the EA Portal**:  
+   - Go to [EA Portal](https://ea.azure.com).
+   - Navigate to **Manage > Enrollment Account**.
+
+2. **Grant Access to the Service Principal**:
+   - Find the **Enrollment Account ID**.
+   - Assign the Service Principal as an **"Enrollment Account Contributor"**.
+
+---
+
+## **Step 3: Use REST API to Create the Subscription**
+Once permissions are assigned, use the **Azure REST API** to create the EA subscription.
+
+### **1. Obtain an Access Token**
+Use the Service Principal credentials to obtain an OAuth token:
+
+```bash
+curl -X POST -H "Content-Type: application/x-www-form-urlencoded" \
+-d "grant_type=client_credentials&client_id={clientId}&client_secret={clientSecret}&resource=https://management.azure.com/" \
+"https://login.microsoftonline.com/{tenantId}/oauth2/token"
+```
+
+Save the **access_token** returned.
+
+---
+
+### **2. Create the Subscription**
+Use the **Microsoft.Subscription API** to create the new subscription:
+
+```bash
+curl -X POST "https://management.azure.com/providers/Microsoft.Subscription/createSubscription?api-version=2021-10-01" \
+  -H "Authorization: Bearer {access_token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "displayName": "NewEA_Subscription",
+    "billingScope": "/providers/Microsoft.Billing/enrollmentAccounts/{enrollmentAccountId}",
+    "skuId": "0001",
+    "subscriptionOwnerId": "/tenants/{tenantId}/users/{userId}"
+  }'
+```
+- **displayName**: The name of the new subscription.
+- **billingScope**: The EA Enrollment Account billing scope.
+- **skuId**: Defines the subscription type.
+- **subscriptionOwnerId**: The user or Service Principal that will own the subscription.
+
+---
+
+## **Step 4: Verify Subscription Creation**
+Once the request is successful:
+1. Navigate to the **Azure Portal** → **Subscriptions**.
+2. Confirm the newly created EA subscription appears.
+3. Assign additional users or Service Principals as needed.
+
+---
+
+## **Step 5: Assign Owner Permissions to the Subscription**
+Since the subscription is new, you may need to assign **Owner** permissions:
+
+```bash
+az role assignment create --assignee <ServicePrincipalID> --role "Owner" --scope "/subscriptions/<subscriptionId>"
+```
+
+---
+
+## **Optional: Automate Using PowerShell**
+If you prefer PowerShell over REST API, you can use the `New-AzSubscription` cmdlet:
+
+```powershell
+Connect-AzAccount -ServicePrincipal -Tenant <tenantId> -ApplicationId <clientId> -CertificateThumbprint "<certThumbprint>"
+
+New-AzSubscription -Name "EA_Subscription" -OfferType "MS-AZR-0017P" -BillingScope "/providers/Microsoft.Billing/enrollmentAccounts/{enrollmentAccountId}"
+```
+
+---
+
+### **Key Considerations**
+✅ **Permissions**: Service Principal must have the correct roles at the EA Billing Scope.  
+✅ **API Quotas**: EA API limits how frequently new subscriptions can be created.  
+✅ **Azure Policy Compliance**: Ensure the new subscription follows company policies.
+
+Would you like a Terraform or Bicep template to automate this? 🚀
+
+
+
 No, a **Service Principal (SP)** **cannot** create Azure subscriptions directly because subscription creation requires **billing account-level permissions**, which **cannot** be assigned to a service principal. 
 
 ### **Why a Service Principal Cannot Create Subscriptions?**
