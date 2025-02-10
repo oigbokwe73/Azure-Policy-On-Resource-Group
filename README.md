@@ -1,3 +1,39 @@
+ea.portal.com was the legacy portal for managing Enterprise Agreements (EA) in Azure. It is now retired and replaced by the Cost Management + Billing feature within the Azure portal. You should use the Azure portal for all EA administration tasks now. [1, 1, 2, 2]  
+Yes, you can use a Service Principal identity to create EA subscriptions. To do this, you need to grant the Service Principal appropriate permissions within your EA enrollment. [3, 4, 5]  
+Here's a breakdown: [2, 6]  
+
+• Enterprise Agreement (EA): This is a licensing program from Microsoft designed for large organizations to purchase and manage Microsoft products and services, including Azure, under a single agreement. [2, 2, 6, 6, 7, 8]  
+• EA Enrollment: This represents your organization's commercial relationship with Microsoft and provides the billing foundation for your Azure subscriptions. [2, 2]  
+• Service Principal: A security principal in Azure Active Directory (Azure AD) that represents an application or service. You can use a Service Principal to automate tasks, including creating subscriptions. [9, 9, 10, 10]  
+• Granting Permissions: To allow a Service Principal to create EA subscriptions, an account owner or administrator with the necessary permissions (e.g., Owner role on the Enrollment Account) needs to assign appropriate roles to the Service Principal. [3, 3, 4, 4, 5, 5]  
+• Using the Azure Portal (Cost Management + Billing): The Azure portal's Cost Management + Billing feature is where you manage your EA enrollment, including assigning roles to Service Principals and creating subscriptions. [1, 1, 2, 2, 11]  
+
+Steps to use a Service Principal to create EA subscriptions: [3, 3, 4, 4, 10, 10]  
+
+1. Create a Service Principal: You can create a Service Principal in Azure AD using the Azure portal or Azure CLI. [3, 3, 10, 10, 12]  
+2. Grant Permissions: [3, 3, 5, 5]  
+	• Sign in to the Azure portal as an account owner or administrator with the necessary permissions. [3, 5, 11]  
+	• Navigate to Cost Management + Billing. [1, 3, 5, 11]  
+	• Find your EA enrollment and access its settings. [3, 5, 13, 14]  
+	• Assign the appropriate role to the Service Principal (e.g., "Azure Subscription Creator" or "Owner" on the appropriate billing scope). [3, 3, 5, 15, 16, 17]  
+
+
+3. Use the Service Principal: You can now use the Service Principal (using tools like Azure CLI or PowerShell) to programmatically create new subscriptions under your EA. [3, 3, 4, 4, 18]  
+
+Key Considerations: [3, 19]  
+
+• API Version: Ensure you use the correct API version (e.g., 2019-10-01-preview) when working with EA role assignments and subscription creation. [3, 20, 21, 22]  
+• Legacy APIs: While legacy APIs exist, it's recommended to use the latest GA version of the APIs for subscription creation unless you have a specific need to use the legacy ones. [5, 5]  
+• Multiple EA Accounts: If you have multiple EA billing accounts, you must grant the necessary roles to the Service Principal in each account individually. [11, 11]  
+• Automation: Using Service Principals enables automation of subscription creation, which can be beneficial for large organizations or DevOps scenarios. [3, 4, 5, 11, 23]  
+
+
+Generative AI is experimental.
+
+[1] https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/direct-ea-administration[2] https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/landing-zone/design-area/azure-billing-enterprise-agreement[3] https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/programmatically-create-subscription-enterprise-agreement[4] https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/programmatically-create-subscription-preview[5] https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/grant-access-to-create-subscription[6] https://www.ensono.com/insights-and-news/expert-opinions/microsoft-ea-vs-csp-which-right-you/[7] https://learn.microsoft.com/en-us/azure/cost-management-billing/microsoft-customer-agreement/onboard-microsoft-customer-agreement[8] https://licenseware.io/microsoft-enterprise-agreement-benefits-drawbacks-and-negotiation-tips/[9] https://docs.turbo360.com/docs/what-is-a-service-principal[10] https://docs.omnissa.com/bundle/HorizonCloudServicesUsingNextGenGuide/page/CreateaServicePrincipalfortheMicrosoftAzureSubscription.html[11] https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/assign-roles-azure-service-principals[12] https://learn.microsoft.com/en-us/cli/azure/azure-cli-sp-tutorial-1[13] https://medium.com/cloudtechoffice/azure-ea-onboarding-guide-part-1-7820048da61c[14] https://help.ea.com/en/help/account/find-your-ea-account-email-address-using-your-game/[15] https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/programmatically-create-subscription-microsoft-customer-agreement[16] https://github.com/Azure/azure-cli/issues/26470[17] https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/add-change-subscription-administrator[18] https://www.damianflynn.com/blog/2020-04-24-delegating-ea-privilages-to-principal/[19] https://www.damianflynn.com/blog/2020-04-24-delegating-ea-privilages-to-principal/[20] https://microsoft.github.io/AzureTipsAndTricks/blog/tip213.html[21] https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/programmatically-create-subscription-enterprise-agreement[22] https://learn.microsoft.com/en-us/azure/cost-management-billing/manage/programmatically-create-subscription-enterprise-agreement[23] https://www.volt.io/content-hub/variable-recurring-payments-what-are-they-and-how-do-they-work/
+
+
+
 ### **Creating an Enterprise Agreement (EA) Subscription with a Service Principal in Azure**
 Creating an **Enterprise Agreement (EA) Subscription** using a **Service Principal** requires configuring permissions and using the appropriate Azure APIs or automation tools.
 
