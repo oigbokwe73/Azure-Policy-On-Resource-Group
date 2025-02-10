@@ -1,4 +1,58 @@
+Yes, to create Azure subscriptions using an **Enrollment Account**, you need **RBAC (Role-Based Access Control) permissions** at the **Azure Enterprise Agreement (EA) level** or in **Microsoft Cost Management + Billing** (for Microsoft Customer Agreement - MCA).
 
+### **Steps to Create Azure Subscriptions with an Enrollment Account and Assign RBAC Access**
+---
+
+### **1. Verify Prerequisites**
+Ensure you have the right permissions:
+- **For EA (Enterprise Agreement) Accounts**:
+  - You need to be an **Enterprise Administrator** or **Enrollment Account Owner**.
+- **For MCA (Microsoft Customer Agreement)**:
+  - You need **Billing Account Owner** or **Billing Profile Owner**.
+
+### **2. Sign in to Azure Portal**
+Go to **[Azure Portal](https://portal.azure.com)** and navigate to:
+- **Cost Management + Billing** > **Billing scopes** > Select **Enrollment Account**.
+
+### **3. Create a New Subscription**
+1. In **Cost Management + Billing**, select **+ Add Subscription**.
+2. Choose **Enrollment Account** or **Billing Profile**.
+3. Select the desired **Subscription Offer** (Pay-As-You-Go, CSP, etc.).
+4. Provide a **Subscription Name**.
+5. Select the **Azure Region** and any associated policies.
+
+### **4. Assign RBAC Permissions**
+After the subscription is created, you must assign RBAC roles:
+1. Go to **Azure Subscription** in **Azure Portal**.
+2. Open **Access Control (IAM)**.
+3. Click **+ Add Role Assignment**.
+4. Select the role:
+   - **Owner** – Full access including billing.
+   - **Contributor** – Can manage resources but not assign roles.
+   - **Reader** – View-only access.
+5. Select the **User, Group, or Service Principal**.
+6. Click **Save**.
+
+### **5. Validate Subscription and Access**
+- Go to **Subscriptions** in the Azure portal.
+- Ensure the correct users have access under **IAM**.
+
+---
+### **Automation Using Azure PowerShell**
+If you need to automate subscription creation, use:
+
+```powershell
+# Login to Azure
+Connect-AzAccount
+
+# Create a new subscription
+New-AzSubscription -OfferType "MS-AZR-0017P" -EnrollmentAccount "your-enrollment-account"
+
+# Assign RBAC permissions
+New-AzRoleAssignment -Scope "/subscriptions/{subscriptionId}" -RoleDefinitionName "Owner" -PrincipalId "{User_Object_ID}"
+```
+---
+This ensures that your **Azure Subscription is created** with proper **RBAC access** via an Enrollment Account. Let me know if you need additional details! 🚀
 You're correct that Terraform does not directly support creating **Azure Subscriptions** in the current AzureRM provider version (as of now). Azure subscription creation requires interacting with the **Azure Subscription API**, which Terraform does not natively manage. However, you can automate this process using Azure CLI, custom scripts, or an external tool in conjunction with Terraform.
 
 Below is a workaround to achieve this:
