@@ -1,3 +1,75 @@
+
+You can use **Azure CLI** or **PowerShell** with the Microsoft Graph API to search for **Azure Tags**.
+
+---
+
+### **Using Azure CLI with Microsoft Graph API**
+Azure CLI provides a direct way to query Azure Resource Graph for tags.
+
+#### **CLI Script to Search for Azure Tags**
+```sh
+az graph query -q "Resources | where tags contains 'Environment'"
+```
+Replace `'Environment'` with the tag name you're searching for.
+
+#### **CLI Script to Search for a Specific Tag and Value**
+```sh
+az graph query -q "Resources | where tags['Environment'] == 'Production'"
+```
+This finds all resources with the tag `Environment` set to `Production`.
+
+---
+
+### **Using PowerShell with Microsoft Graph API**
+To retrieve tagged resources via PowerShell, you can use **Az.ResourceGraph**.
+
+#### **PowerShell Script to Search for Azure Tags**
+```powershell
+# Install the Az.ResourceGraph module if not installed
+Install-Module -Name Az.ResourceGraph -Force -AllowClobber
+
+# Login to Azure
+Connect-AzAccount
+
+# Define the tag key you want to search for
+$tagKey = "Environment"
+
+# Define the query
+$query = @"
+Resources
+| where tags['$tagKey'] != ''
+"@
+
+# Run the query
+$resources = Search-AzGraph -Query $query
+
+# Display the results
+$resources | Format-Table name, resourceGroup, tags -AutoSize
+```
+
+#### **PowerShell Script to Search for a Specific Tag and Value**
+```powershell
+$tagKey = "Environment"
+$tagValue = "Production"
+
+$query = @"
+Resources
+| where tags['$tagKey'] == '$tagValue'
+"@
+
+$resources = Search-AzGraph -Query $query
+
+$resources | Format-Table name, resourceGroup, tags -AutoSize
+```
+
+---
+
+### **What These Scripts Do**
+- Queries **Azure Resource Graph** to filter resources by tags.
+- Uses the `tags` property to search for a specific tag or tag value.
+- Outputs the matching resources in a table format.
+
+Would you like additional filters (like filtering by subscription or resource type)? 🚀
 Here's a **PowerShell script** to search for Azure tags across your Azure resources:
 
 ### **PowerShell Script to Search for Azure Tags**
