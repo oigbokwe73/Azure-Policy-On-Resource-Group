@@ -1,3 +1,97 @@
+### **Setting Subscription Context in Azure CLI and PowerShell**
+When working with multiple Azure subscriptions, you need to **set the context** for your commands to execute within a specific subscription.
+
+---
+
+## **1️⃣ Azure CLI - Set Subscription Context**
+You can manually set the subscription context before running any queries using:
+
+```sh
+az account set --subscription "<subscription-id>"
+```
+✅ This ensures that all subsequent commands run within the specified subscription.
+
+### **Example: Set Subscription and Run Query**
+```sh
+# Set subscription context
+az account set --subscription "your-subscription-id"
+
+# Run Resource Graph Query
+az graph query -q "Resources | where tags['Environment'] == 'Production'"
+```
+
+### **List Available Subscriptions**
+To find all available subscriptions, run:
+```sh
+az account list --query "[].{Name:name, ID:id}" -o table
+```
+
+---
+
+## **2️⃣ PowerShell - Set Subscription Context**
+In **PowerShell**, you can set the context using `Set-AzContext`:
+
+```powershell
+# Set the subscription context
+Set-AzContext -SubscriptionId "your-subscription-id"
+```
+
+### **Example: Set Subscription and Run Query**
+```powershell
+# Set the correct subscription
+Set-AzContext -SubscriptionId "your-subscription-id"
+
+# Run Azure Resource Graph Query
+$resources = Search-AzGraph -Query "Resources | where tags['Environment'] == 'Production'"
+
+# Display results
+$resources | Format-Table name, resourceGroup, subscriptionId, tags -AutoSize
+```
+
+### **List Available Subscriptions**
+To get all available subscriptions:
+```powershell
+Get-AzSubscription | Select-Object Name, SubscriptionId
+```
+
+---
+
+## **Automating Subscription Context Switching**
+If you want to **loop through all subscriptions** and run a query on each, you can use:
+
+### **Azure CLI (Loop Through All Subscriptions)**
+```sh
+for sub in $(az account list --query "[].id" -o tsv); do
+    echo "Switching to Subscription: $sub"
+    az account set --subscription "$sub"
+    az graph query -q "Resources | where tags['Environment'] == 'Production'"
+done
+```
+
+### **PowerShell (Loop Through All Subscriptions)**
+```powershell
+$subscriptions = Get-AzSubscription | Select-Object -ExpandProperty SubscriptionId
+
+foreach ($sub in $subscriptions) {
+    Write-Host "Switching to Subscription: $sub"
+    Set-AzContext -SubscriptionId $sub
+    
+    $resources = Search-AzGraph -Query "Resources | where tags['Environment'] == 'Production'"
+    $resources | Format-Table name, resourceGroup, subscriptionId, tags -AutoSize
+}
+```
+
+---
+
+## **Key Takeaways**
+- Use `az account set --subscription "your-subscription-id"` in **Azure CLI**.
+- Use `Set-AzContext -SubscriptionId "your-subscription-id"` in **PowerShell**.
+- Loop through multiple subscriptions if needed.
+- List subscriptions using `az account list` (CLI) or `Get-AzSubscription` (PowerShell).
+
+Would you like to extend this to **export the results** to CSV or JSON? 🚀
+
+
 If you want to **iterate through resources across multiple subscriptions** while filtering by a specific tag (`Environment = Production`), you can modify the **Azure CLI** and **PowerShell** scripts to include the subscription details.
 
 ---
