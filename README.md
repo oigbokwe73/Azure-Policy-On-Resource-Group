@@ -1,3 +1,83 @@
+If you want to **iterate through resources across multiple subscriptions** while filtering by a specific tag (`Environment = Production`), you can modify the **Azure CLI** and **PowerShell** scripts to include the subscription details.
+
+---
+
+## **Using Bash (Linux/macOS/WSL)**
+This script retrieves resources from all subscriptions and iterates over them.
+
+### **Bash Script to Iterate Through Azure Resources Across Subscriptions**
+```sh
+#!/bin/bash
+
+# Get all subscriptions
+subscriptions=$(az account list --query "[].id" -o tsv)
+
+for sub in $subscriptions; do
+    echo "Fetching resources for Subscription: $sub"
+    
+    # Run the Azure Resource Graph query for each subscription
+    resources=$(az graph query -q "Resources | where tags['Environment'] == 'Production'" --subscription "$sub" --query "data" -o json)
+
+    # Loop through each resource
+    echo "$resources" | jq -c '.[]' | while read -r resource; do
+        name=$(echo "$resource" | jq -r '.name')
+        rg=$(echo "$resource" | jq -r '.resourceGroup')
+        tags=$(echo "$resource" | jq -r '.tags')
+
+        echo "Resource Name: $name"
+        echo "Resource Group: $rg"
+        echo "Subscription: $sub"
+        echo "Tags: $tags"
+        echo "--------------------------------"
+    done
+done
+```
+
+> **Prerequisites:** Ensure `jq` is installed (`sudo apt install jq` on Ubuntu or `brew install jq` on macOS).
+
+---
+
+## **Using PowerShell (Windows/macOS/Linux)**
+This script retrieves resources from all subscriptions and iterates over them.
+
+### **PowerShell Script to Iterate Through Azure Resources Across Subscriptions**
+```powershell
+# Get all subscriptions
+$subscriptions = az account list --query "[].id" -o json | ConvertFrom-Json
+
+foreach ($sub in $subscriptions) {
+    Write-Host "Fetching resources for Subscription: $sub"
+
+    # Run Azure CLI query for each subscription
+    $resources = az graph query -q "Resources | where tags['Environment'] == 'Production'" --subscription $sub --query "data" | ConvertFrom-Json
+
+    # Iterate over each resource
+    foreach ($resource in $resources) {
+        Write-Host "Resource Name: $($resource.name)"
+        Write-Host "Resource Group: $($resource.resourceGroup)"
+        Write-Host "Subscription: $sub"
+        Write-Host "Tags:"
+
+        # Iterate through tags
+        foreach ($tag in $resource.tags.PSObject.Properties) {
+            Write-Host "  - $($tag.Name) : $($tag.Value)"
+        }
+
+        Write-Host "--------------------------------"
+    }
+}
+```
+
+---
+
+## **What These Scripts Do**
+1. **Fetches all Azure subscriptions** using `az account list`.
+2. **Loops through each subscription** and queries Azure Resource Graph for resources tagged with `Environment = Production`.
+3. **Extracts resource details** including **name, resource group, tags, and subscription ID**.
+4. **Iterates through the tags** and prints them.
+
+Would you like to export this data to **CSV or JSON** for further processing? 🚀
+
 If you want to **iterate over the results** of your `az graph query` command in Azure CLI, you can do so using a **bash script** or **PowerShell**.
 
 ---
