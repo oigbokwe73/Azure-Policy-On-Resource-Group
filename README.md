@@ -1,3 +1,67 @@
+If you want to **iterate over the results** of your `az graph query` command in Azure CLI, you can do so using a **bash script** or **PowerShell**.
+
+---
+
+## **Using Bash (Linux/macOS/WSL)**
+If you're using Azure CLI in a Bash environment, you can iterate over the results using a `for` loop.
+
+### **Bash Script to Iterate Through Azure Resources with a Specific Tag**
+```sh
+#!/bin/bash
+
+# Run the Azure Resource Graph query and store the output as JSON
+resources=$(az graph query -q "Resources | where tags['Environment'] == 'Production'" --query "data" -o json)
+
+# Loop through each resource
+echo "$resources" | jq -c '.[]' | while read -r resource; do
+    name=$(echo "$resource" | jq -r '.name')
+    rg=$(echo "$resource" | jq -r '.resourceGroup')
+    tags=$(echo "$resource" | jq -r '.tags')
+
+    echo "Resource Name: $name"
+    echo "Resource Group: $rg"
+    echo "Tags: $tags"
+    echo "--------------------------------"
+done
+```
+
+> **Prerequisites:** Ensure `jq` is installed (`sudo apt install jq` on Ubuntu or `brew install jq` on macOS).
+
+---
+
+## **Using PowerShell (Windows/macOS/Linux)**
+If you're using **PowerShell**, you can use the `ForEach-Object` loop.
+
+### **PowerShell Script to Iterate Through Azure Resources with a Specific Tag**
+```powershell
+# Run Azure CLI query and store output as an object
+$resources = az graph query -q "Resources | where tags['Environment'] == 'Production'" --query "data" | ConvertFrom-Json
+
+# Iterate over each resource
+foreach ($resource in $resources) {
+    Write-Host "Resource Name: $($resource.name)"
+    Write-Host "Resource Group: $($resource.resourceGroup)"
+    Write-Host "Tags:"
+    
+    # Iterate through tags
+    foreach ($tag in $resource.tags.PSObject.Properties) {
+        Write-Host "  - $($tag.Name) : $($tag.Value)"
+    }
+
+    Write-Host "--------------------------------"
+}
+```
+
+---
+
+## **What These Scripts Do**
+- Query **Azure Resource Graph** to filter resources by a specific tag (`Environment = Production`).
+- Extracts relevant details (**name, resource group, tags**).
+- Iterates over **each resource** and prints its details.
+- Iterates over the **tags** associated with each resource.
+
+Would you like to extend this to **filter by subscription** or **output to a CSV**? 🚀
+
 Here's a **PowerShell script** that iterates through each resource in Azure and prints its name, resource group, and tags.
 
 ---
