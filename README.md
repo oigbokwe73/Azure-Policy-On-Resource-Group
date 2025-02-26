@@ -1,3 +1,41 @@
+Here's a **PowerShell script** to search for Azure tags across your Azure resources:
+
+### **PowerShell Script to Search for Azure Tags**
+```powershell
+# Login to Azure if not already logged in
+Connect-AzAccount
+
+# Define the tag key and value to search for (Modify as needed)
+$tagKey = "Environment"
+$tagValue = "Production"
+
+# Get all resources with the specific tag key and value
+$resources = Get-AzResource | Where-Object { $_.Tags[$tagKey] -eq $tagValue }
+
+# Display results
+if ($resources) {
+    $resources | Select-Object Name, ResourceGroupName, ResourceType, Location, @{Name="TagValue";Expression={$_.Tags[$tagKey]}} | Format-Table -AutoSize
+} else {
+    Write-Host "No resources found with the tag '$tagKey' = '$tagValue'"
+}
+```
+
+---
+
+### **Azure CLI Command to Search for Tags**
+If you prefer **Azure CLI**, you can use the following command:
+```sh
+az resource list --tag Environment=Production --query "[].{Name:name, ResourceGroup:resourceGroup, Type:type, Location:location}" --output table
+```
+🔹 Replace `"Environment=Production"` with your desired tag key and value.
+
+Would you like additional filtering options, such as searching within specific resource groups or subscriptions? 🚀
+
+
+
+
+
+
 ea.portal.com was the legacy portal for managing Enterprise Agreements (EA) in Azure. It is now retired and replaced by the Cost Management + Billing feature within the Azure portal. You should use the Azure portal for all EA administration tasks now. [1, 1, 2, 2]  
 Yes, you can use a Service Principal identity to create EA subscriptions. To do this, you need to grant the Service Principal appropriate permissions within your EA enrollment. [3, 4, 5]  
 Here's a breakdown: [2, 6]  
