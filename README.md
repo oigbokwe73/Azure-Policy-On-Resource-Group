@@ -1,3 +1,70 @@
+Here's a **PowerShell script** that iterates through each resource in Azure and prints its name, resource group, and tags.
+
+---
+
+### **PowerShell Script to Iterate Through Each Resource with Tags**
+```powershell
+# Install and Import Az.ResourceGraph module if not installed
+if (-not (Get-Module -ListAvailable -Name Az.ResourceGraph)) {
+    Install-Module -Name Az.ResourceGraph -Force -AllowClobber
+}
+
+# Connect to Azure if not already authenticated
+Connect-AzAccount
+
+# Query to fetch all resources with tags
+$query = @"
+Resources
+| where isnotempty(tags)
+"@
+
+# Run the query
+$resources = Search-AzGraph -Query $query
+
+# Iterate through each resource and print its details
+foreach ($resource in $resources) {
+    Write-Host "Resource Name: " $resource.name
+    Write-Host "Resource Group: " $resource.resourceGroup
+    Write-Host "Tags: "
+    
+    # Iterate through tags and print them
+    foreach ($tag in $resource.tags.GetEnumerator()) {
+        Write-Host "  - $($tag.Key) : $($tag.Value)"
+    }
+
+    Write-Host "----------------------------------------"
+}
+```
+
+---
+
+### **Explanation of the Script**
+1. **Check & Install** `Az.ResourceGraph` module if it's not installed.
+2. **Authenticate** using `Connect-AzAccount`.
+3. **Query Azure Resource Graph** to get resources that have tags.
+4. **Loop through each resource**:
+   - Print the **resource name** and **resource group**.
+   - Iterate through its **tags** and print the key-value pairs.
+
+---
+
+### **Output Example**
+```
+Resource Name:  MyVM1
+Resource Group: RG-Production
+Tags:
+  - Environment : Production
+  - Owner : DevOps Team
+----------------------------------------
+Resource Name:  SQLServer1
+Resource Group: RG-Database
+Tags:
+  - Environment : Staging
+  - Owner : Data Team
+----------------------------------------
+```
+
+Would you like additional filtering, such as filtering by **subscription** or **resource type**? 🚀
 
 You can use **Azure CLI** or **PowerShell** with the Microsoft Graph API to search for **Azure Tags**.
 
