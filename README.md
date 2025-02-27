@@ -1,3 +1,66 @@
+### **Summary: Enabling a Service Principal to Create Azure Subscriptions Under an Enterprise Agreement (EA)**  
+
+To allow a **Service Principal (SP)** to create subscriptions under an **Enterprise Agreement (EA)**, an **Enterprise Administrator** must grant the necessary permissions.
+
+#### **Key Steps:**
+1. **Verify Enterprise Administrator Access**  
+   - Enterprise Administrator logs into the **Azure Enterprise Portal** ([ea.azure.com](https://ea.azure.com)).
+   
+2. **Assign Enrollment Account Owner Role to Service Principal**  
+   - Navigate to **Cost Management + Billing** → **Enrollment Accounts** → **IAM (Access Control)**.  
+   - Assign **Enrollment Account Owner** role to the Service Principal.
+
+3. **Grant Azure AD Directory Role (If Required)**  
+   - Go to **Azure Active Directory** → **Roles and Administrators**.  
+   - Assign **Owner** or **Contributor** role to the Service Principal.
+
+4. **Verify Permissions**  
+   - Run `Get-AzRoleAssignment -SignInName "<SP_NAME>"` to confirm permissions.
+
+5. **Create Subscription Using Service Principal**  
+   - **PowerShell:**  
+     ```powershell
+     New-AzSubscription -EnrollmentAccountName "<ENROLLMENT_ACCOUNT>" -SubscriptionName "<NEW_SUBSCRIPTION_NAME>"
+     ```
+   - **Azure CLI:**  
+     ```bash
+     az account subscription create --name "<NEW_SUBSCRIPTION_NAME>" --enrollment-account-name "<ENROLLMENT_ACCOUNT>"
+     ```
+
+6. **Validate Subscription Creation**  
+   - Check in **Azure Portal** under **Subscriptions**.  
+   - Assign additional **RBAC roles** if needed.
+
+---
+
+### **Backout Plan: Reverting Service Principal Access**  
+If the change needs to be rolled back for security or operational reasons:
+
+#### **Step 1: Remove Enrollment Account Owner Role**  
+1. **Azure Portal:**  
+   - Go to **Cost Management + Billing** → **Enrollment Accounts**.  
+   - Select the affected **Enrollment Account**.  
+   - Under **Access Control (IAM)**, remove the **Service Principal** from the **Enrollment Account Owner** role.
+
+#### **Step 2: Remove Azure AD Directory Roles** (If previously assigned)  
+1. **Azure Active Directory** → **Roles and Administrators**.  
+2. Locate the **Service Principal** and remove assigned roles (**Owner, Contributor, or other roles**).
+
+#### **Step 3: Validate Removal**  
+Run the following command to ensure the Service Principal no longer has the required permissions:  
+```powershell
+Get-AzRoleAssignment -SignInName "<SP_NAME>"
+```
+
+#### **Step 4: Audit Logs for Compliance**  
+- Check **Azure Activity Logs** and **Azure AD Logs** for any unexpected changes.  
+- Ensure no subscriptions were created with unauthorized access.
+
+---
+
+This process ensures that the Service Principal is granted the necessary access **only when needed** and can be **revoked** quickly if required. 🚀 Let me know if you need additional automation scripts!
+
+
 ### **Updating Azure Resource Tags Using a CSV (Azure CLI Script)**
 
 This **Azure CLI script** reads a CSV file containing resource details and tags, then updates the **Azure resource tags** accordingly.
