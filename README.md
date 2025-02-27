@@ -1,3 +1,83 @@
+### **PowerShell Script to Update Azure Resource Tags from a CSV File**
+This script reads a **CSV file** containing resource details and their tags, then updates the **Azure resource tags** accordingly.
+
+---
+
+### **📌 CSV File Format (`tags.csv`)**
+Ensure the CSV file is structured as follows:
+
+| ResourceID | TagKey  | TagValue  |
+|------------|--------|-----------|
+| `/subscriptions/xxxx/resourceGroups/rg1/providers/Microsoft.Compute/virtualMachines/vm1` | Environment | Production |
+| `/subscriptions/xxxx/resourceGroups/rg1/providers/Microsoft.Storage/storageAccounts/staccount1` | Owner | DevOpsTeam |
+
+> **Make sure `ResourceID` is the full path of the Azure resource.**
+
+---
+
+### **🔹 PowerShell Script to Update Tags from CSV**
+```powershell
+# Define the CSV file path
+$csvFile = "tags.csv"
+
+# Import the CSV file
+$csvData = Import-Csv -Path $csvFile
+
+# Loop through each row in the CSV
+foreach ($row in $csvData) {
+    $resourceId = $row.ResourceID
+    $tagKey = $row.TagKey
+    $tagValue = $row.TagValue
+
+    Write-Host "Updating $tagKey=$tagValue for $resourceId"
+
+    # Fetch existing tags
+    $existingTagsJson = az resource show --ids $resourceId --query "tags" -o json
+    $existingTags = $existingTagsJson | ConvertFrom-Json
+
+    # Merge new tag with existing tags
+    if ($existingTags) {
+        $existingTags | Add-Member -NotePropertyName $tagKey -NotePropertyValue $tagValue -Force
+    } else {
+        $existingTags = @{$tagKey = $tagValue}
+    }
+
+    # Convert tags back to JSON format
+    $updatedTagsJson = $existingTags | ConvertTo-Json -Compress
+
+    # Apply updated tags
+    az resource tag --ids $resourceId --tags $updatedTagsJson --only-show-errors
+
+    Write-Host "Updated tags for $resourceId"
+    Write-Host "---------------------------------"
+}
+```
+
+---
+
+### **🔹 How the Script Works**
+1. **Reads the CSV file** and extracts `ResourceID`, `TagKey`, and `TagValue`.
+2. **Fetches existing tags** for the resource using `az resource show`.
+3. **Merges new tags** with the existing ones.
+4. **Applies the updated tags** using `az resource tag`.
+
+---
+
+### **🔹 Running the Script**
+```powershell
+.\update-tags.ps1
+```
+> **Ensure the CSV file is in the same directory as the script, or update `$csvFile` with the correct path.**
+
+---
+
+### **✅ Need More?**
+Would you like to:
+- **Update multiple tags per resource from CSV?** 📂
+- **Log errors if a resource update fails?** 🚀
+
+Let me know how you'd like to extend it! 🎯
+
 ### **Setting Subscription Context in Azure CLI and PowerShell**
 When working with multiple Azure subscriptions, you need to **set the context** for your commands to execute within a specific subscription.
 
