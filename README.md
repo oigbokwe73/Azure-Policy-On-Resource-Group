@@ -1,3 +1,108 @@
+Here is a **complete `server.xml` configuration** for **Tomcat 9+** that includes **path-based rewrites** using the **Rewrite Valve**.
+
+---
+
+### **Complete `server.xml`**
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Server port="8005" shutdown="SHUTDOWN">
+
+    <!-- Global Naming Resources -->
+    <GlobalNamingResources>
+        <Resource name="UserDatabase" auth="Container"
+                  type="org.apache.catalina.UserDatabase"
+                  description="User database that can be updated and saved"
+                  factory="org.apache.catalina.users.MemoryUserDatabaseFactory"
+                  pathname="conf/tomcat-users.xml" />
+    </GlobalNamingResources>
+
+    <!-- Service Configuration -->
+    <Service name="Catalina">
+        
+        <!-- HTTP Connector (Handles HTTP requests) -->
+        <Connector port="8080" protocol="HTTP/1.1"
+                   connectionTimeout="20000"
+                   redirectPort="8443" />
+
+        <!-- HTTPS Connector (Handles Secure Requests) -->
+        <Connector port="8443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+                   SSLEnabled="true">
+            <SSLHostConfig>
+                <Certificate certificateKeystoreFile="conf/keystore.p12"
+                             type="PKCS12"
+                             certificateKeystorePassword="your_password"/>
+            </SSLHostConfig>
+        </Connector>
+
+        <!-- Host Configuration -->
+        <Engine name="Catalina" defaultHost="localhost">
+            <Realm className="org.apache.catalina.realm.LockOutRealm">
+                <Realm className="org.apache.catalina.realm.UserDatabaseRealm"
+                       resourceName="UserDatabase"/>
+            </Realm>
+
+            <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true">
+                
+                <!-- Enable Rewrite Valve -->
+                <Valve className="org.apache.catalina.valves.rewrite.RewriteValve" />
+                
+                <!-- Application Contexts -->
+                <Context path="/app1" docBase="/var/lib/tomcat9/webapps/app1" reloadable="true"/>
+                <Context path="/app2" docBase="/var/lib/tomcat9/webapps/app2" reloadable="true"/>
+
+            </Host>
+        </Engine>
+
+    </Service>
+</Server>
+```
+
+---
+
+### **Rewrite Configuration for Path-Based Routing**
+Now, configure **path-based redirection** in **`rewrite.config`**.
+
+1. **Create the Rewrite Configuration File**:
+   ```sh
+   sudo mkdir -p /etc/tomcat9/Catalina/localhost/
+   sudo nano /etc/tomcat9/Catalina/localhost/rewrite.config
+   ```
+
+2. **Add Path-Based Rewrite Rules**:
+   ```
+   # Redirect old paths to new paths
+   RewriteCond %{REQUEST_PATH} ^/oldpath$
+   RewriteRule ^/oldpath$ /newpath [R=301,L]
+
+   # Redirect /app1/specificpage to /app2/home
+   RewriteCond %{REQUEST_PATH} ^/app1/specificpage$
+   RewriteRule ^/app1/specificpage$ /app2/home [R=301,L]
+
+   # Force HTTPS for all requests
+   RewriteCond %{HTTPS} off
+   RewriteRule ^/(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+   ```
+
+---
+
+### **Restart Tomcat to Apply Changes**
+```sh
+sudo systemctl restart tomcat9
+```
+
+---
+
+### **📌 How This Works**
+- **Redirects `/oldpath` to `/newpath`**.
+- **Redirects `/app1/specificpage` to `/app2/home`**.
+- **Forces all HTTP requests to HTTPS**.
+
+---
+
+This ensures **seamless path-based redirections** using Tomcat’s built-in **Rewrite Valve**. 🚀 Let me know if you need further customizations!
+
+
+
 ### **Summary: Enabling a Service Principal to Create Azure Subscriptions Under an Enterprise Agreement (EA)**  
 
 To allow a **Service Principal (SP)** to create subscriptions under an **Enterprise Agreement (EA)**, an **Enterprise Administrator** must grant the necessary permissions.
