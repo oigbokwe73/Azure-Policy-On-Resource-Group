@@ -1,3 +1,43 @@
+To open the **outbound** firewall rule for **SQL Server (TCP 1433)** using PowerShell and Command Prompt, use the following scripts.
+
+---
+
+## **🔹 PowerShell Script to Open Outbound SQL Server Port**
+```powershell
+New-NetFirewallRule -DisplayName "SQL Server Outbound 1433" -Direction Outbound -Protocol TCP -LocalPort 1433 -Action Allow
+```
+
+For **SQL Browser Service (UDP 1434)**:
+```powershell
+New-NetFirewallRule -DisplayName "SQL Browser Outbound 1434" -Direction Outbound -Protocol UDP -LocalPort 1434 -Action Allow
+```
+
+---
+
+## **🔹 Command Prompt (`netsh`) Script to Open Outbound SQL Server Port**
+```cmd
+netsh advfirewall firewall add rule name="SQL Server Outbound 1433" dir=out action=allow protocol=TCP localport=1433
+```
+
+For **SQL Browser Service (UDP 1434)**:
+```cmd
+netsh advfirewall firewall add rule name="SQL Browser Outbound 1434" dir=out action=allow protocol=UDP localport=1434
+```
+
+---
+
+## **🔹 Verify Firewall Rules Are Configured**
+To check if the firewall rules exist, run the following **PowerShell** command:
+```powershell
+Get-NetFirewallRule | Where-Object DisplayName -like "*SQL Server Outbound*"
+```
+
+For **Command Prompt**, use:
+```cmd
+netsh advfirewall firewall show rule name="SQL Server Outbound 1433"
+```
+
+Would you like a script that removes firewall rules if needed? 🚀
 To open the firewall for SQL Server using **SQL Server Management Studio (SSMS)**, you typically need to allow inbound traffic on **TCP port 1433** (default) or any custom port SQL Server is listening on.
 
 Since SSMS itself doesn't have a direct command to modify firewall rules, you must use **PowerShell** or the **Windows Firewall with Advanced Security GUI**.
