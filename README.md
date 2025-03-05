@@ -1,3 +1,52 @@
+To open the firewall for SQL Server using **SQL Server Management Studio (SSMS)**, you typically need to allow inbound traffic on **TCP port 1433** (default) or any custom port SQL Server is listening on.
+
+Since SSMS itself doesn't have a direct command to modify firewall rules, you must use **PowerShell** or the **Windows Firewall with Advanced Security GUI**.
+
+---
+
+## **🔹 Open SQL Server Port in Windows Firewall Using PowerShell**
+Run the following PowerShell command to allow inbound traffic on **TCP port 1433**:
+
+```powershell
+New-NetFirewallRule -DisplayName "SQL Server Port 1433" -Direction Inbound -Protocol TCP -LocalPort 1433 -Action Allow
+```
+
+For **UDP port 1434** (used by SQL Server Browser service):
+
+```powershell
+New-NetFirewallRule -DisplayName "SQL Server Browser UDP 1434" -Direction Inbound -Protocol UDP -LocalPort 1434 -Action Allow
+```
+
+---
+
+## **🔹 Open SQL Server Port Using Command Prompt**
+If using `netsh` instead of PowerShell:
+
+```cmd
+netsh advfirewall firewall add rule name="SQL Server 1433" dir=in action=allow protocol=TCP localport=1433
+```
+
+For SQL Browser service (UDP 1434):
+
+```cmd
+netsh advfirewall firewall add rule name="SQL Browser 1434" dir=in action=allow protocol=UDP localport=1434
+```
+
+---
+
+## **🔹 Allow Remote SQL Server Connections in SSMS**
+After opening the firewall, ensure SQL Server allows **remote connections**:
+
+1. Open **SQL Server Management Studio (SSMS)**.
+2. Connect to your SQL Server instance.
+3. Open **SQL Server Configuration Manager**.
+4. Expand **SQL Server Network Configuration** → Click on **Protocols for [Your Instance]**.
+5. Enable **TCP/IP** (if disabled).
+6. Restart the **SQL Server service**.
+
+Would you like a script to check if the firewall rule is already in place? 🚀
+
+
 Here is a **complete `server.xml` configuration** for **Tomcat 9+** that includes **path-based rewrites** using the **Rewrite Valve**.
 
 ---
