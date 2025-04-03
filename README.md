@@ -1,3 +1,66 @@
+Here's a **PowerShell script** using the **Az module** to move resources from one Azure resource group to another.
+
+---
+
+### 💻 Prerequisites
+- Install the Az module if not already: `Install-Module -Name Az -Scope CurrentUser -Repository PSGallery -Force`
+- Login with: `Connect-AzAccount`
+
+---
+
+### 🚀 PowerShell Script: Move Azure Resources Between Resource Groups
+
+```powershell
+# Parameters
+$sourceRG = "MySourceResourceGroup"
+$targetRG = "MyTargetResourceGroup"
+$subscriptionId = "00000000-0000-0000-0000-000000000000"  # replace with your subscription ID
+
+# Optional: set the subscription context
+Select-AzSubscription -SubscriptionId $subscriptionId
+
+# Get the list of resources in the source resource group
+$resources = Get-AzResource -ResourceGroupName $sourceRG
+
+# Show resources to be moved
+Write-Host "The following resources will be moved:" -ForegroundColor Cyan
+$resources | ForEach-Object { Write-Host $_.Name "(`$($_.ResourceType)`)" }
+
+# Confirm move
+$confirm = Read-Host "Do you want to continue with the move? (yes/no)"
+if ($confirm -ne "yes") {
+    Write-Host "Operation cancelled." -ForegroundColor Yellow
+    return
+}
+
+# Extract resource IDs
+$resourceIds = $resources.ResourceId
+
+# Execute move
+Write-Host "Moving resources to $targetRG..." -ForegroundColor Green
+Move-AzResource -DestinationResourceGroupName $targetRG -ResourceId $resourceIds
+
+Write-Host "Resource move complete." -ForegroundColor Green
+```
+
+---
+
+### ✅ What it Does
+- Lists all resources in the source resource group.
+- Prompts you for confirmation.
+- Moves them to the destination resource group using `Move-AzResource`.
+
+---
+
+### 🛑 Notes & Caveats
+- Some resource types (e.g., classic resources, AD Domain Services, Recovery Vaults) **cannot be moved**.
+- Resources must be in the **same subscription**.
+- The script doesn't handle **dependencies**—you must move dependent resources together.
+
+---
+
+Want a version that works across **subscriptions** too?
+
 To open the **outbound** firewall rule for **SQL Server (TCP 1433)** using PowerShell and Command Prompt, use the following scripts.
 
 ---
