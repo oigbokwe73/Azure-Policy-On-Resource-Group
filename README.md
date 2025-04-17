@@ -1,3 +1,314 @@
+Perfect. Below are **both the Terraform module** and **Azure CLI script** to deploy and assign the Azure Policy that:
+
+- Automatically enables diagnostic settings for PostgreSQL Flexible Servers
+- Ensures specific logging server parameters are enabled
+- Routes logs to a pre-existing Log Analytics Workspace
+
+---
+
+## 🧱 Terraform Module
+
+> ✅ Assumes the policy definition is scoped at the **subscription level**
+
+### 📁 `main.tf`
+```hcl
+provider "azurerm" {
+  features {}
+}
+
+variable "policy_display_name" {
+  default = "Enforce Diagnostic Settings and PostgreSQL Parameters for Flexible Server"
+}
+
+variable "log_analytics_workspace_id" {
+  description = "Resource ID of Log Analytics Workspace"
+  type        = string
+}
+
+data "azurerm_subscription" "current" {}
+
+resource "azurerm_policy_definition" "postgresql_diag_policy" {
+  name         = "postgresql-flexible-server-diagnostics"
+  policy_type  = "Custom"
+  mode         = "Indexed"
+  display_name = var.policy_display_name
+  description  = "Apply diagnostic settings and logging configurations for PostgreSQL Flexible Server"
+
+  metadata = jsonencode({
+    category = "PostgreSQL"
+  })
+
+  parameters = jsonencode({
+    logAnalytics = {
+      type = "String",
+      metadata = {
+        displayName = "Log Analytics Workspace Resource ID",
+        description = "Resource ID of Log Analytics workspace"
+      }
+    }
+  })
+
+  policy_rule = file("${path.module}/policy_rule.json")
+}
+
+resource "azurerm_policy_assignment" "postgresql_policy_assignment" {
+  name                 = "assign-postgresql-diagnostics"
+  scope                = data.azurerm_subscription.current.id
+  policy_definition_id = azurerm_policy_definition.postgresql_diag_policy.id
+  display_name         = var.policy_display_name
+
+  parameters = jsonencode({
+    logAnalytics = {
+      value = var.log_analytics_workspace_id
+    }
+  })
+}
+```
+
+### 📁 `policy_rule.json`
+Paste the full policy rule content I gave you earlier here (the `"policyRule"` object).
+
+---
+
+### 🧪 Example Terraform Usage
+```hcl
+module "postgresql_diagnostics" {
+  source                     = "./modules/postgresql_diag_policy"
+  log_analytics_workspace_id = "/subscriptions/xxxx/resourceGroups/rg-a65-prd/providers/Microsoft.OperationalInsights/workspaces/toc-loganalytics"
+}
+```
+
+---
+
+## 🔧 Azure CLI Script
+
+> ✅ Assigns the policy at the **subscription level**.
+
+### 📜 `create-policy.sh`
+
+```bash
+#!/bin/bash
+
+# Variables
+policyName="postgresql-flexible-server-diagnostics"
+displayName="Enforce Diagnostic Settings and PostgreSQL Parameters for Flexible Server"
+logAnalytics="/subscriptions/<subscription-id>/resourceGroups/rg-a65-prd/providers/Microsoft.OperationalInsights/workspaces/toc-loganalytics"
+subscriptionId="<your-subscription-id>"
+policyRulePath="./policy_rule.json"
+
+# Create the policy definition
+az policy definition create \
+  --name "$policyName" \
+  --display-name "$displayName" \
+  --description "Ensure diagnostic settings and server logging configurations for PostgreSQL Flexible Server" \
+  --rules "$policyRulePath" \
+  --params '{
+    "logAnalytics": {
+      "type": "String",
+      "metadata": {
+        "displayName": "Log Analytics Workspace Resource ID",
+        "description": "Resource ID of Log Analytics workspace"
+      }
+    }
+  }' \
+  --mode Indexed \
+  --subscription "$subscriptionId"
+
+# Assign the policy
+az policy assignment create \
+  --name "assign-$policyName" \
+  --display-name "$displayName" \
+  --policy "$policyName" \
+  --params "{\"logAnalytics\":{\"value\":\"$logAnalytics\"}}" \
+  --scope "/subscriptions/$subscriptionId"
+```
+
+---
+
+### ✅ Notes
+- Replace `<subscription-id>` with your actual subscription ID.
+- Make sure the `policy_rule.json` file is available in the same folder and contains the full `policyRule` JSON.
+
+Would you like me to generate a sample `policy_rule.json` file fully separated for your repo layout?
+
+Here's a **detailed Azure Policy** to enforce diagnostic settings and PostgreSQL server parameter configurations for **Azure Database for PostgreSQL Flexible Server**. This solution includes:
+
+- Automatically applying to existing and future PostgreSQL flexible servers.
+- Targeting a **specific Log Analytics workspace** (`toc-loganalytics` in `rg-a65-prd`).
+- Enforcing diagnostic logs (PostgreSQL Server Logs, Sessions).
+- Enforcing PostgreSQL configuration settings.
+
+---
+
+### 🔧 **Policy Definition: PostgreSQL Flexible Server Diagnostic + Parameters Policy**
+
+```json
+{
+  "properties": {
+    "displayName": "Enforce Diagnostic Settings and PostgreSQL Parameters for PostgreSQL Flexible Server",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "description": "Enforces diagnostic settings for PostgreSQL Flexible Servers and ensures server parameters for logging are correctly configured.",
+    "metadata": {
+      "category": "PostgreSQL",
+      "version": "1.0.0"
+    },
+    "parameters": {
+      "logAnalytics": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Log Analytics Workspace Resource ID",
+          "description": "Resource ID of the existing Log Analytics Workspace"
+        }
+      }
+    },
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.DBforPostgreSQL/flexibleServers"
+          }
+        ]
+      },
+      "then": {
+        "effect": "deployIfNotExists",
+        "details": {
+          "type": "Microsoft.Resources/deployments",
+          "roleDefinitionIds": [
+            "/providers/microsoft.authorization/roleDefinitions/Contributor"
+          ],
+          "deploymentScope": "resourceGroup",
+          "existenceCondition": {
+            "allOf": [
+              {
+                "field": "Microsoft.DBforPostgreSQL/flexibleServers/diagnosticSettings[*].workspaceId",
+                "equals": "[parameters('logAnalytics')]"
+              },
+              {
+                "field": "Microsoft.DBforPostgreSQL/flexibleServers/diagnosticSettings[*].logs[*].category",
+                "contains": "PostgreSQLLogs"
+              },
+              {
+                "field": "Microsoft.DBforPostgreSQL/flexibleServers/diagnosticSettings[*].logs[*].category",
+                "contains": "PostgreSQLSessions"
+              }
+            ]
+          },
+          "deployment": {
+            "properties": {
+              "mode": "incremental",
+              "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "resources": [
+                  {
+                    "type": "Microsoft.Insights/diagnosticSettings",
+                    "apiVersion": "2021-05-01-preview",
+                    "name": "[concat('diag-', parameters('serverName'))]",
+                    "dependsOn": [],
+                    "properties": {
+                      "workspaceId": "[parameters('logAnalytics')]",
+                      "logs": [
+                        {
+                          "category": "PostgreSQLLogs",
+                          "enabled": true,
+                          "retentionPolicy": {
+                            "enabled": false,
+                            "days": 0
+                          }
+                        },
+                        {
+                          "category": "PostgreSQLSessions",
+                          "enabled": true,
+                          "retentionPolicy": {
+                            "enabled": false,
+                            "days": 0
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+                    "apiVersion": "2022-01-20-preview",
+                    "name": "[concat(parameters('serverName'), '/log_checkpoints')]",
+                    "properties": {
+                      "value": "on",
+                      "source": "user-override"
+                    }
+                  },
+                  {
+                    "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+                    "apiVersion": "2022-01-20-preview",
+                    "name": "[concat(parameters('serverName'), '/log_connections')]",
+                    "properties": {
+                      "value": "on",
+                      "source": "user-override"
+                    }
+                  },
+                  {
+                    "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+                    "apiVersion": "2022-01-20-preview",
+                    "name": "[concat(parameters('serverName'), '/log_disconnections')]",
+                    "properties": {
+                      "value": "on",
+                      "source": "user-override"
+                    }
+                  },
+                  {
+                    "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+                    "apiVersion": "2022-01-20-preview",
+                    "name": "[concat(parameters('serverName'), '/log_retention_days')]",
+                    "properties": {
+                      "value": "4",
+                      "source": "user-override"
+                    }
+                  }
+                ],
+                "parameters": {
+                  "serverName": {
+                    "type": "string"
+                  }
+                }
+              },
+              "parameters": {
+                "serverName": {
+                  "value": "[field('name')]"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+### 🔄 **Policy Assignment Suggestions**
+
+**Assign the policy** at the **subscription** or **management group** level to capture existing and future PostgreSQL flexible servers.
+
+📌 **Parameter value** for assignment:
+```bash
+"logAnalytics": "/subscriptions/<sub-id>/resourceGroups/rg-a65-prd/providers/Microsoft.OperationalInsights/workspaces/toc-loganalytics"
+```
+
+---
+
+### ✅ **Validation and Next Steps**
+
+- **DEV Rollout**: Apply in `dev` environment first (as Ricardo did).
+- **Monitor**: Wait for remediation status = `Succeeded`.
+- **Approval**: Await Security Solution team confirmation.
+- **Deploy to other environments** after greenlight.
+
+Would you like a **Terraform module** or **Azure CLI script** to assign this policy with parameters?
+
+
 Here’s a detailed **Azure Policy definition** that ensures the specified PostgreSQL server parameters are configured correctly. This policy can be assigned at the subscription or resource group level to enforce the configurations on **Azure Database for PostgreSQL - Flexible Server** or **Single Server**, depending on your use case.
 
 ---
