@@ -1,4 +1,32 @@
+Here’s a **Kusto Query Language (KQL)** query using the **`Heartbeat`** table that shows **uptime over a week** as a time series, grouped by day and computer (or any node identifier):
 
+```kusto
+Heartbeat
+| where TimeGenerated > ago(7d)
+| summarize heartbeat_count = count() by bin(TimeGenerated, 1h), Computer
+| extend status = iif(heartbeat_count > 0, "Up", "Down")
+| summarize up_hours = countif(status == "Up"), total_hours = count() 
+          by bin(TimeGenerated, 1d), Computer
+| extend uptime_percent = round(100.0 * up_hours / total_hours, 2)
+| order by TimeGenerated asc
+```
+
+### 🔍 Breakdown:
+- `bin(TimeGenerated, 1h)` — Groups heartbeats hourly.
+- `status` — Assumes if a heartbeat is received, the machine is considered "Up".
+- Then we roll that up daily: `bin(TimeGenerated, 1d)`.
+- `uptime_percent` — Daily uptime in percentage (out of 24 hours).
+
+### 📈 Optional Visualization in Time Chart:
+To visualize this in the Azure Log Analytics dashboard:
+
+```kusto
+| render timechart 
+```
+
+Just append `| render timechart` at the end of the query to get a time series chart by `Computer`.
+
+Would you like a version broken down by VM Resource Group or Subscription, or something more granular like 15-min intervals?
 Great — here’s a detailed breakdown of the **required permissions at the Azure subscription level** for Grafana to successfully connect to and query **Azure Monitor**, **Application Insights**, and **Log Analytics**.
 
 ---
