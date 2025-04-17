@@ -1,3 +1,55 @@
+Here’s a detailed **Kusto Query** to calculate **Azure Application Gateway uptime over the last 7 days**, using the `AzureDiagnostics` or `AGWAccessLog` (if available) table that contains Application Gateway logs:
+
+---
+
+### ✅ **Option 1: Using `AzureDiagnostics` for Application Gateway**
+(Use this if Application Gateway logs are going to Log Analytics via Diagnostic Settings)
+
+```kusto
+AzureDiagnostics
+| where TimeGenerated > ago(7d)
+| where ResourceType == "APPLICATIONGATEWAYS" and Category == "ApplicationGatewayAccessLog"
+| summarize request_count = count() by bin(TimeGenerated, 1h), Resource
+| extend status = iif(request_count > 0, "Up", "Down")
+| summarize up_hours = countif(status == "Up"), total_hours = count() 
+          by bin(TimeGenerated, 1d), Resource
+| extend uptime_percent = round(100.0 * up_hours / total_hours, 2)
+| order by TimeGenerated asc
+```
+
+---
+
+### ✅ **Option 2: Using `AGWAccessLog` Table (Newer schema)**
+```kusto
+AGWAccessLog
+| where TimeGenerated > ago(7d)
+| summarize request_count = count() by bin(TimeGenerated, 1h), gatewayName
+| extend status = iif(request_count > 0, "Up", "Down")
+| summarize up_hours = countif(status == "Up"), total_hours = count()
+          by bin(TimeGenerated, 1d), gatewayName
+| extend uptime_percent = round(100.0 * up_hours / total_hours, 2)
+| order by TimeGenerated asc
+```
+
+---
+
+### 📊 Optional Visualization
+To visualize this uptime per Application Gateway over the last 7 days:
+
+```kusto
+| render timechart
+```
+
+---
+
+### 🔄 Notes:
+- This assumes that **any request in an hour** indicates the gateway was "Up".
+- You can adjust the logic based on `BackendStatus`, `ResponseStatus`, or add `Heartbeat` data if applicable.
+- If you need **downtime causes**, you might correlate with `AzureMetrics` for health probe failures.
+
+Let me know if you want to include **region, subscription, or backend health state** as well!
+
+
 Here’s a **Kusto Query Language (KQL)** query using the **`Heartbeat`** table that shows **uptime over a week** as a time series, grouped by day and computer (or any node identifier):
 
 ```kusto
