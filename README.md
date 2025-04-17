@@ -1,3 +1,231 @@
+
+Great — below are both the **Terraform module** and the **Azure CLI script in PowerShell** to deploy and assign the custom policy.
+
+---
+
+## 📦 Terraform Module: PostgreSQL Logging Policy Deployment
+
+This module:
+- Creates a custom Azure Policy Definition
+- Assigns it at the subscription level
+- Targets a specific Log Analytics Workspace for diagnostic logs
+- Sets PostgreSQL server parameters
+
+---
+
+### 🔧 `postgres_policy.tf`
+
+```hcl
+variable "subscription_id" {}
+variable "log_analytics_workspace_id" {}
+variable "policy_definition_name" {
+  default = "enforce-postgresql-diagnostics-policy"
+}
+variable "policy_display_name" {
+  default = "Enforce PostgreSQL Flexible Server Diagnostics and Parameters"
+}
+
+resource "azurerm_policy_definition" "postgres_diag_policy" {
+  name         = var.policy_definition_name
+  policy_type  = "Custom"
+  mode         = "Indexed"
+  display_name = var.policy_display_name
+  description  = "Ensure PostgreSQL Flexible Servers have diagnostic settings enabled and logging parameters set"
+
+  metadata = jsonencode({
+    category = "PostgreSQL"
+    version  = "1.0.0"
+  })
+
+  parameters = jsonencode({
+    logAnalytics = {
+      type = "String"
+      metadata = {
+        displayName = "Log Analytics Workspace Resource ID"
+        description = "The target Log Analytics workspace"
+      }
+    }
+  })
+
+  policy_rule = file("${path.module}/postgres_policy_rule.json")
+}
+
+resource "azurerm_policy_assignment" "postgres_diag_assignment" {
+  name                 = "enforce-postgres-diagnostics"
+  display_name         = "Enforce PostgreSQL Logging + Diagnostics"
+  policy_definition_id = azurerm_policy_definition.postgres_diag_policy.id
+  scope                = "/subscriptions/${var.subscription_id}"
+
+  parameters = jsonencode({
+    logAnalytics = {
+      value = var.log_analytics_workspace_id
+    }
+  })
+}
+```
+
+---
+
+### 📁 `postgres_policy_rule.json`
+
+Save this next to your `.tf` file:
+
+```json
+{
+  "if": {
+    "allOf": [
+      {
+        "field": "type",
+        "equals": "Microsoft.DBforPostgreSQL/flexibleServers"
+      }
+    ]
+  },
+  "then": {
+    "effect": "deployIfNotExists",
+    "details": {
+      "type": "Microsoft.Resources/deployments",
+      "roleDefinitionIds": [
+        "/providers/microsoft.authorization/roleDefinitions/Contributor"
+      ],
+      "deploymentScope": "resourceGroup",
+      "existenceCondition": {
+        "allOf": [
+          {
+            "field": "Microsoft.DBforPostgreSQL/flexibleServers/diagnosticSettings[*].workspaceId",
+            "equals": "[parameters('logAnalytics')]"
+          },
+          {
+            "field": "Microsoft.DBforPostgreSQL/flexibleServers/diagnosticSettings[*].logs[*].category",
+            "contains": "PostgreSQLLogs"
+          },
+          {
+            "field": "Microsoft.DBforPostgreSQL/flexibleServers/diagnosticSettings[*].logs[*].category",
+            "contains": "PostgreSQLSessions"
+          }
+        ]
+      },
+      "deployment": {
+        "properties": {
+          "mode": "incremental",
+          "template": {
+            "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+            "contentVersion": "1.0.0.0",
+            "parameters": {
+              "serverName": {
+                "type": "string"
+              }
+            },
+            "resources": [
+              {
+                "type": "Microsoft.Insights/diagnosticSettings",
+                "apiVersion": "2021-05-01-preview",
+                "name": "[concat('diag-', parameters('serverName'))]",
+                "properties": {
+                  "workspaceId": "[parameters('logAnalytics')]",
+                  "logs": [
+                    {
+                      "category": "PostgreSQLLogs",
+                      "enabled": true,
+                      "retentionPolicy": {
+                        "enabled": false,
+                        "days": 0
+                      }
+                    },
+                    {
+                      "category": "PostgreSQLSessions",
+                      "enabled": true,
+                      "retentionPolicy": {
+                        "enabled": false,
+                        "days": 0
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+                "apiVersion": "2022-01-20-preview",
+                "name": "[concat(parameters('serverName'), '/log_checkpoints')]",
+                "properties": {
+                  "value": "on",
+                  "source": "user-override"
+                }
+              },
+              {
+                "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+                "apiVersion": "2022-01-20-preview",
+                "name": "[concat(parameters('serverName'), '/log_connections')]",
+                "properties": {
+                  "value": "on",
+                  "source": "user-override"
+                }
+              },
+              {
+                "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+                "apiVersion": "2022-01-20-preview",
+                "name": "[concat(parameters('serverName'), '/log_disconnections')]",
+                "properties": {
+                  "value": "on",
+                  "source": "user-override"
+                }
+              },
+              {
+                "type": "Microsoft.DBforPostgreSQL/flexibleServers/configurations",
+                "apiVersion": "2022-01-20-preview",
+                "name": "[concat(parameters('serverName'), '/log_retention_days')]",
+                "properties": {
+                  "value": "4",
+                  "source": "user-override"
+                }
+              }
+            ]
+          },
+          "parameters": {
+            "serverName": {
+              "value": "[field('name')]"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+## 🖥 PowerShell Azure CLI Script
+
+Here's how to create and assign the policy using **Azure CLI (PowerShell compatible)**:
+
+```powershell
+$subscriptionId = "<your-subscription-id>"
+$workspaceId = "/subscriptions/<sub-id>/resourceGroups/rg-a65-prd/providers/Microsoft.OperationalInsights/workspaces/toc-loganalytics"
+
+# Create policy definition
+az policy definition create `
+  --name "enforce-postgres-diagnostics" `
+  --display-name "Enforce PostgreSQL Flexible Server Diagnostics and Parameters" `
+  --description "Ensure PostgreSQL has diagnostics and logging enabled" `
+  --rules "postgres_policy_rule.json" `
+  --params '{"logAnalytics": {"type": "String", "metadata": {"displayName": "Log Analytics Workspace", "description": "Target LA Workspace"}}}' `
+  --mode "Indexed" `
+  --subscription $subscriptionId `
+  --policy-type "Custom" `
+  --metadata category=PostgreSQL
+
+# Assign the policy
+az policy assignment create `
+  --name "assign-postgres-diagnostics" `
+  --policy "enforce-postgres-diagnostics" `
+  --params "{\"logAnalytics\": {\"value\": \"$workspaceId\"}}" `
+  --scope "/subscriptions/$subscriptionId"
+```
+
+---
+
+Would you like to **test this in Dev environment only** first using a **separate assignment scope** or proceed with **all environments**? I can tailor the module/scope accordingly.
+
 Perfect. Below are **both the Terraform module** and **Azure CLI script** to deploy and assign the Azure Policy that:
 
 - Automatically enables diagnostic settings for PostgreSQL Flexible Servers
