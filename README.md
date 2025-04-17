@@ -1,3 +1,132 @@
+Here’s a detailed **Azure Policy definition** that ensures the specified PostgreSQL server parameters are configured correctly. This policy can be assigned at the subscription or resource group level to enforce the configurations on **Azure Database for PostgreSQL - Flexible Server** or **Single Server**, depending on your use case.
+
+---
+
+### ✅ **Azure Policy: Enforce PostgreSQL Server Logging Parameters**
+
+```json
+{
+  "properties": {
+    "displayName": "Ensure PostgreSQL Server Logging Parameters are Configured Correctly",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "description": "Ensures PostgreSQL server has logging settings: log_checkpoints, log_connections, log_disconnections set to ON, and log_retention_days > 3.",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "PostgreSQL"
+    },
+    "parameters": {},
+    "policyRule": {
+      "if": {
+        "allOf": [
+          {
+            "field": "type",
+            "equals": "Microsoft.DBforPostgreSQL/servers/configurations"
+          },
+          {
+            "anyOf": [
+              {
+                "allOf": [
+                  {
+                    "field": "Microsoft.DBforPostgreSQL/servers/configurations/name",
+                    "equals": "log_checkpoints"
+                  },
+                  {
+                    "field": "Microsoft.DBforPostgreSQL/servers/configurations/value",
+                    "notEquals": "on"
+                  }
+                ]
+              },
+              {
+                "allOf": [
+                  {
+                    "field": "Microsoft.DBforPostgreSQL/servers/configurations/name",
+                    "equals": "log_connections"
+                  },
+                  {
+                    "field": "Microsoft.DBforPostgreSQL/servers/configurations/value",
+                    "notEquals": "on"
+                  }
+                ]
+              },
+              {
+                "allOf": [
+                  {
+                    "field": "Microsoft.DBforPostgreSQL/servers/configurations/name",
+                    "equals": "log_disconnections"
+                  },
+                  {
+                    "field": "Microsoft.DBforPostgreSQL/servers/configurations/value",
+                    "notEquals": "on"
+                  }
+                ]
+              },
+              {
+                "allOf": [
+                  {
+                    "field": "Microsoft.DBforPostgreSQL/servers/configurations/name",
+                    "equals": "log_retention_days"
+                  },
+                  {
+                    "field": "Microsoft.DBforPostgreSQL/servers/configurations/value",
+                    "lessThanOrEquals": "3"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "then": {
+        "effect": "audit"
+      }
+    }
+  }
+}
+```
+
+---
+
+### 🔧 **How to Deploy This Policy**
+
+You can deploy this policy using **Azure CLI**:
+
+```bash
+az policy definition create \
+  --name 'enforce-postgresql-logging-parameters' \
+  --display-name 'Ensure PostgreSQL Logging Parameters are Configured Correctly' \
+  --description 'Checks PostgreSQL server parameters for logging best practices.' \
+  --rules policy.json \
+  --mode Indexed \
+  --subscription <your-subscription-id> \
+  --policy-type Custom \
+  --category 'PostgreSQL'
+```
+
+Then assign it:
+
+```bash
+az policy assignment create \
+  --name 'enforce-postgresql-logging-parameters-assignment' \
+  --policy 'enforce-postgresql-logging-parameters' \
+  --scope /subscriptions/<your-subscription-id>/resourceGroups/<your-resource-group>
+```
+
+---
+
+### 🧠 **Policy Summary**
+
+| Parameter               | Expected Value | Description                                               |
+|------------------------|----------------|-----------------------------------------------------------|
+| `log_checkpoints`      | `on`           | Logs each checkpoint for analysis and debugging           |
+| `log_connections`      | `on`           | Logs successful connection attempts                       |
+| `log_disconnections`   | `on`           | Logs session disconnects                                  |
+| `log_retention_days`   | `> 3`          | Ensures logs are kept for analysis and compliance reasons |
+
+---
+
+Would you like a **Terraform policy definition**, or a **Policy Initiative** bundle for grouping this with other PostgreSQL policies?
+
 Here's a **PowerShell script** using the **Az module** to move resources from one Azure resource group to another.
 
 ---
