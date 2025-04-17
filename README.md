@@ -1,7 +1,80 @@
 
-Great — below are both the **Terraform module** and the **Azure CLI script in PowerShell** to deploy and assign the custom policy.
+Great — here’s a detailed breakdown of the **required permissions at the Azure subscription level** for Grafana to successfully connect to and query **Azure Monitor**, **Application Insights**, and **Log Analytics**.
 
 ---
+
+## ✅ Required Permissions at the Azure **Subscription** Level for Grafana
+
+These are the **Azure built-in roles** you typically need **at the subscription scope**, assigned to **Grafana’s Managed Identity** or **Service Principal**:
+
+| **Role Name**                         | **Purpose**                                                                 | **Scope**          | **Required For**                            |
+|--------------------------------------|-----------------------------------------------------------------------------|--------------------|---------------------------------------------|
+| `Monitoring Reader`                  | Grants read-only access to monitoring data from Azure Monitor               | Subscription       | Access to metrics from Azure Monitor        |
+| `Reader`                             | Grants read-only access to all resource metadata                            | Subscription       | Auto-discovery of resources (VMs, Apps, etc.) |
+| `Log Analytics Reader`              | Grants permission to query across all Log Analytics workspaces              | Subscription       | Run KQL queries in Log Analytics            |
+| `Application Insights Component Contributor` | Access to read App Insights telemetry                         | Subscription or resource group | Application Insights queries                 |
+
+---
+
+### 🔍 Why These Roles?
+
+| **Use Case**                            | **Needed Role(s)**                                  |
+|----------------------------------------|-----------------------------------------------------|
+| Query Azure Monitor metrics (CPU, Memory, etc.) | `Monitoring Reader`                                 |
+| Discover and list Azure resources to build dynamic dashboards | `Reader`                                      |
+| Run Kusto (KQL) queries on Log Analytics (e.g., App logs, Activity Logs) | `Log Analytics Reader`                      |
+| Read Application Insights telemetry (traces, dependencies, failures) | `Application Insights Component Contributor` |
+
+---
+
+### 🔐 Example: Assigning via Azure CLI
+
+```bash
+# Replace with your Managed Identity or Service Principal ID
+IDENTITY_ID="<client-id or managed identity objectId>"
+
+# Replace with your Azure Subscription ID
+SUBSCRIPTION_ID="<your-subscription-id>"
+
+# Assign Monitoring Reader
+az role assignment create \
+  --assignee "$IDENTITY_ID" \
+  --role "Monitoring Reader" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID"
+
+# Assign Reader
+az role assignment create \
+  --assignee "$IDENTITY_ID" \
+  --role "Reader" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID"
+
+# Assign Log Analytics Reader
+az role assignment create \
+  --assignee "$IDENTITY_ID" \
+  --role "Log Analytics Reader" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID"
+
+# Optional: App Insights Component Contributor
+az role assignment create \
+  --assignee "$IDENTITY_ID" \
+  --role "Application Insights Component Contributor" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID"
+```
+
+---
+
+### 🛡️ Least Privilege Tip
+
+You can **reduce scope** to just the resource group or individual resources, but this means:
+
+- Manually managing access per resource
+- Losing support for resource auto-discovery and filtering
+- Complexity for dynamic dashboards
+
+If Grafana needs to support **organization-wide observability**, assign at the **subscription** level.
+
+---
+
 
 ## 📦 Terraform Module: PostgreSQL Logging Policy Deployment
 
