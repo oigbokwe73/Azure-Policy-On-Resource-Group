@@ -1,5 +1,70 @@
-Great question — to **include maintenance windows** in your Application Gateway uptime query, you'll need a way to **overlay known maintenance periods** (like patching or approved downtimes) against your uptime logs.
+Creating a **dynamic table** in **Kusto Query Language (KQL)** can mean a few things depending on context. If you're referring to **a dynamic array of values** (like a list of dictionaries or JSON-like rows), then you'd use the `datatable` operator with a **`dynamic`** column type.
 
+Here’s how you can **create a dynamic column in a KQL table**, and how to query or expand it.
+
+---
+
+### ✅ **1. Creating a Dynamic Column Table**
+
+```kusto
+let MyTable = datatable(Name:string, Properties:dynamic)
+[
+    "AppGW-East", dynamic({"Region": "East US", "Maintenance": true, "Tags": ["prod", "network"]}),
+    "AppGW-West", dynamic({"Region": "West US", "Maintenance": false, "Tags": ["dev"]})
+];
+MyTable
+```
+
+---
+
+### ✅ **2. Accessing Values in a Dynamic Column**
+
+You can access elements inside the dynamic object using dot notation or brackets:
+
+```kusto
+MyTable
+| extend Region = Properties.Region,
+         Maintenance = Properties.Maintenance,
+         Tags = tostring(Properties.Tags[0])
+```
+
+---
+
+### ✅ **3. Exploding (expanding) dynamic arrays**
+
+If the dynamic column contains an **array** (like tags), you can expand them into individual rows:
+
+```kusto
+MyTable
+| mv-expand Tag = Properties.Tags
+```
+
+---
+
+### ✅ **4. Using Dynamic Tables in Real-Time Scenarios**
+
+A dynamic table could also represent **external configs**, like your **maintenance windows**, example:
+
+```kusto
+let MaintenanceWindows = datatable(Metadata: dynamic)
+[
+    dynamic({"Start": "2025-04-10T02:00:00Z", "End": "2025-04-10T04:00:00Z", "Reason": "Patch"}),
+    dynamic({"Start": "2025-04-13T01:00:00Z", "End": "2025-04-13T03:00:00Z", "Reason": "Upgrade"})
+];
+MaintenanceWindows
+| extend StartTime = todatetime(Metadata.Start), 
+         EndTime = todatetime(Metadata.End), 
+         Reason = tostring(Metadata.Reason)
+```
+
+---
+
+### 🧠 Tip:
+Use `dynamic` type when your schema is flexible (like nested JSON or arrays). For structured values, prefer explicitly typed `datatable` columns.
+
+---
+
+Want to ingest a JSON blob into a dynamic column from a Log Analytics table (like `AzureActivity`) or external REST API source? Let me know and I can show how to parse those too.
 Here’s how you can do it:
 
 ---
