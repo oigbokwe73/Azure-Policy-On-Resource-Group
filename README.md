@@ -1,3 +1,66 @@
+Great question — to **include maintenance windows** in your Application Gateway uptime query, you'll need a way to **overlay known maintenance periods** (like patching or approved downtimes) against your uptime logs.
+
+Here’s how you can do it:
+
+---
+
+### 🛠️ **Step 1: Define Maintenance Windows (Static or Dynamic)**
+
+#### 🔹 Option A: Static table in Kusto
+Manually create a `datatable` in your query:
+
+```kusto
+let MaintenanceWindows = datatable(StartTime: datetime, EndTime: datetime, Reason: string)
+[
+    datetime(2025-04-10 02:00:00), datetime(2025-04-10 04:00:00), "Planned Patch",
+    datetime(2025-04-13 01:00:00), datetime(2025-04-13 03:00:00), "App Gateway Upgrade"
+];
+```
+
+---
+
+### 🧠 **Step 2: Join Logs With Maintenance Windows**
+
+Now modify your uptime query to **exclude** or **flag** logs during maintenance:
+
+#### ✅ **Modified Uptime Query With Maintenance Handling**
+```kusto
+let MaintenanceWindows = datatable(StartTime: datetime, EndTime: datetime, Reason: string)
+[
+    datetime(2025-04-10 02:00:00), datetime(2025-04-10 04:00:00), "Planned Patch",
+    datetime(2025-04-13 01:00:00), datetime(2025-04-13 03:00:00), "App Gateway Upgrade"
+];
+AzureDiagnostics
+| where TimeGenerated > ago(7d)
+| where ResourceType == "APPLICATIONGATEWAYS" and Category == "ApplicationGatewayAccessLog"
+| summarize request_count = count() by bin(TimeGenerated, 1h), Resource
+| join kind=leftouter MaintenanceWindows on $left.TimeGenerated between (StartTime .. EndTime)
+| extend status = case(
+    isnotempty(Reason), "Maintenance",
+    request_count > 0, "Up",
+    "Down")
+| summarize
+    up_hours = countif(status == "Up"),
+    down_hours = countif(status == "Down"),
+    maintenance_hours = countif(status == "Maintenance"),
+    total_hours = count()
+  by bin(TimeGenerated, 1d), Resource
+| extend effective_uptime_percent = round(100.0 * up_hours / (total_hours - maintenance_hours), 2)
+| order by TimeGenerated asc
+```
+
+---
+
+### 📈 Result:
+You’ll now get:
+- `up_hours`: active operational time
+- `down_hours`: unexpected downtime
+- `maintenance_hours`: approved/planned downtime
+- `effective_uptime_percent`: uptime excluding maintenance windows
+
+---
+
+Would you like to **automate this by pulling maintenance windows** from a **CMDB, Azure DevOps board**, or a **shared table in Log Analytics** instead of hardcoding them?
 Here’s a detailed **Kusto Query** to calculate **Azure Application Gateway uptime over the last 7 days**, using the `AzureDiagnostics` or `AGWAccessLog` (if available) table that contains Application Gateway logs:
 
 ---
