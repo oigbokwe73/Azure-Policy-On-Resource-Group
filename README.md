@@ -293,7 +293,73 @@ This module:
 - Sets PostgreSQL server parameters
 
 ---
+Great question. The **built-in policy names** I used in the earlier table like `AppGatewayShouldUseWAF` or `FrontDoorBotProtectionAudit` are *descriptive placeholders*. Let's now map those to the **actual Azure built-in policy definitions** along with how to **find them**.
 
+---
+
+## 📍 **Where to Find Azure Built-in Policies**
+
+You can discover all Azure built-in policy definitions through:
+
+### 🔹 **Azure CLI**
+```bash
+az policy definition list --query "[?policyType=='BuiltIn']" --output table
+```
+
+### 🔹 **Azure Portal**
+- Go to **Azure Policy > Definitions**
+- Filter `Type: Built-in`
+- Use the **search bar** (e.g., search "WAF", "Front Door", "Rate Limit")
+
+---
+
+## ✅ **Validated Built-in Policies for Your Use Case**
+
+| **Policy Purpose**                                        | **Built-in Policy Display Name**                                               | **Policy Definition Name** (for CLI/ARM) |
+|-----------------------------------------------------------|---------------------------------------------------------------------------------|------------------------------------------|
+| Ensure WAF is enabled on Application Gateway              | `Application Gateway should have WAF enabled`                                  | `ApplicationGatewayWAFEnabled`           |
+| Enforce WAF Mode on Azure Front Door                      | `Azure Front Door Standard and Premium should have WAF enabled`                | `AzureFrontDoorEnableWAF`                |
+| Rate limit rule for Azure Front Door WAF                  | `Azure Front Door WAF policy should have rate limit rule enabled`             | `AzureFrontDoorWAFRateLimitEnabled`      |
+| Bot protection on Azure Front Door                        | `Azure Front Door WAF policy should have bot protection enabled`              | `AzureFrontDoorWAFBotProtectionEnabled`  |
+
+---
+
+## 🧠 How to Get the Full Policy Definition from CLI
+
+For example, to view the full JSON of the **Rate Limit** policy:
+
+```bash
+az policy definition show --name AzureFrontDoorWAFRateLimitEnabled
+```
+
+Or for Application Gateway WAF:
+
+```bash
+az policy definition show --name ApplicationGatewayWAFEnabled
+```
+
+---
+
+## 📝 Want to Automate Policy Import?
+
+You can use this CLI snippet to **export and save** all four policy definitions locally:
+
+```powershell
+$policies = @(
+  "ApplicationGatewayWAFEnabled",
+  "AzureFrontDoorEnableWAF",
+  "AzureFrontDoorWAFRateLimitEnabled",
+  "AzureFrontDoorWAFBotProtectionEnabled"
+)
+
+foreach ($policy in $policies) {
+  az policy definition show --name $policy | Out-File "$policy.json"
+}
+```
+
+---
+
+Would you like me to export these 4 policies into JSON so you can wrap them into a **custom initiative**, or also generate a **Terraform module** with these included?
 Here's a structured **Implementation Plan** for your **"CSPM WAF Initiative"** using Azure Policy, covering the **initiative creation**, **policy import**, **audit mode enforcement**, and **risk/backout plan**. This is aligned with best practices and formatted for documentation or internal approvals.
 
 ---
