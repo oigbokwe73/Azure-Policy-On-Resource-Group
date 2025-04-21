@@ -294,6 +294,109 @@ This module:
 
 ---
 
+Here's a structured **Implementation Plan** for your **"CSPM WAF Initiative"** using Azure Policy, covering the **initiative creation**, **policy import**, **audit mode enforcement**, and **risk/backout plan**. This is aligned with best practices and formatted for documentation or internal approvals.
+
+---
+
+## 📘 **Implementation Plan: CSPM WAF Initiative**
+
+### 🔹 **Initiative Name**
+- **CSPM WAF Initiative**
+
+### 🔹 **Implementer**
+- **Obinna Igbokwe**
+
+---
+
+## 🏗 **Initiative Creation & Policy Import**
+
+| **#** | **Policy Description** | **Policy Name (Suggested)** | **Policy Effect** |
+|------|-------------------------|------------------------------|-------------------|
+| 1 | Application Gateway should be deployed with Azure WAF | `audit-appgw-with-waf` | `Audit` |
+| 2 | Web Application Firewall (WAF) should use the specified mode for Azure Front Door Service | `audit-frontdoor-waf-mode` | `Audit` |
+| 3 | Enable Rate Limit rule to protect against DDoS attacks on Azure Front Door | `audit-frontdoor-rate-limit` | `Audit` |
+| 4 | Bot Protection should be enabled for Azure Front Door WAF | `audit-frontdoor-bot-protection` | `Audit` |
+
+---
+
+### 🛠️ **Implementation Steps**
+
+1. **Create Initiative Definition**
+    ```bash
+    az policy set-definition create \
+      --name "cspm-waf-initiative" \
+      --display-name "CSPM WAF Initiative" \
+      --description "Audit policies for WAF configuration across App Gateway and Azure Front Door" \
+      --definition-group-name "WAFCompliance" \
+      --definitions '[
+        {
+          "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/audit-appgw-with-waf",
+          "parameters": {}
+        },
+        {
+          "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/audit-frontdoor-waf-mode",
+          "parameters": {}
+        },
+        {
+          "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/audit-frontdoor-rate-limit",
+          "parameters": {}
+        },
+        {
+          "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/audit-frontdoor-bot-protection",
+          "parameters": {}
+        }
+      ]' \
+      --subscription "<SUBSCRIPTION-ID>"
+    ```
+
+2. **Assign Initiative in Audit Mode**
+    ```bash
+    az policy assignment create \
+      --name "cspm-waf-assignment" \
+      --display-name "CSPM WAF Initiative Assignment" \
+      --policy-set-definition "cspm-waf-initiative" \
+      --scope "/subscriptions/<SUBSCRIPTION-ID>" \
+      --enforcement-mode "DoNotEnforce"
+    ```
+
+---
+
+## ✅ **Mode of Policies**
+- **All Policies will be enforced in `Audit` mode**.
+- No enforcement or blocking actions will occur.
+- Suitable for CSPM (Cloud Security Posture Management) visibility.
+
+---
+
+## ⚠ **Risk & Impact Analysis**
+- **Impact Level**: _None expected_
+- **Mode**: `Audit` only – ensures non-intrusive monitoring.
+- **Policies will not interrupt deployments or alter resources.**
+
+---
+
+## 🔁 **Backout Plan**
+- **Backout Trigger**: If issues are observed or unintended logging behavior is found.
+- **Action**: Use the following command to remove the initiative assignment:
+    ```bash
+    az policy assignment delete --name "cspm-waf-assignment"
+    ```
+
+- Initiative and policies can be removed without any downtime.
+
+---
+
+## 🌎 **Environments for Application**
+- Initiative will be applied across **all environments**.
+- Begin in **Dev/Test** for validation, then expand to **Prod** after confirmation.
+
+---
+
+Let me know if you'd like:
+- Terraform version of this initiative
+- Exportable JSON for initiative definition
+- Monitoring KPIs for these audit policies in Azure Monitor or Log Analytics
+
 ### 🔧 `postgres_policy.tf`
 
 ```hcl
