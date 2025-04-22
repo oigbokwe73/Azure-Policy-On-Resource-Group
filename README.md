@@ -1,3 +1,82 @@
+
+Here you go! Below is a **complete Azure Policy Initiative** named **`CSPM WAF Initiative`**, using the 4 verified **built-in policies** for Application Gateway and Azure Front Door WAF configuration — all set to `Audit` mode. This is ready for deployment via **Azure CLI**, **ARM**, or **Terraform (optional)**.
+
+---
+
+## 📘 Initiative: **CSPM WAF Initiative**
+
+### 🧩 **Included Built-in Policies**
+| # | Display Name                                                                 | Policy Definition Name                     |
+|---|------------------------------------------------------------------------------|--------------------------------------------|
+| 1 | Application Gateway should have WAF enabled                                 | `ApplicationGatewayWAFEnabled`             |
+| 2 | Azure Front Door Standard and Premium should have WAF enabled               | `AzureFrontDoorEnableWAF`                  |
+| 3 | Azure Front Door WAF policy should have rate limit rule enabled             | `AzureFrontDoorWAFRateLimitEnabled`        |
+| 4 | Azure Front Door WAF policy should have bot protection enabled              | `AzureFrontDoorWAFBotProtectionEnabled`    |
+
+---
+
+## 🔧 Azure CLI Script (PowerShell-Compatible)
+
+```powershell
+$initiativeName = "cspm-waf-initiative"
+$initiativeDisplayName = "CSPM WAF Initiative"
+$initiativeDescription = "Audit WAF settings for App Gateway and Azure Front Door"
+$subscriptionId = "<your-subscription-id>"
+
+$definitions = @(
+  @{
+    policyDefinitionId = "/providers/Microsoft.Authorization/policyDefinitions/ApplicationGatewayWAFEnabled"
+  },
+  @{
+    policyDefinitionId = "/providers/Microsoft.Authorization/policyDefinitions/AzureFrontDoorEnableWAF"
+  },
+  @{
+    policyDefinitionId = "/providers/Microsoft.Authorization/policyDefinitions/AzureFrontDoorWAFRateLimitEnabled"
+  },
+  @{
+    policyDefinitionId = "/providers/Microsoft.Authorization/policyDefinitions/AzureFrontDoorWAFBotProtectionEnabled"
+  }
+)
+
+$definitionsJson = $definitions | ConvertTo-Json -Depth 5
+
+az policy set-definition create `
+  --name $initiativeName `
+  --display-name $initiativeDisplayName `
+  --description $initiativeDescription `
+  --policy-type "Custom" `
+  --definitions $definitionsJson `
+  --subscription $subscriptionId `
+  --definition-group-name "WAFCompliance"
+```
+
+---
+
+## ✅ Assign Initiative in Audit Mode
+
+```powershell
+az policy assignment create `
+  --name "assign-cspm-waf" `
+  --display-name "CSPM WAF Initiative Assignment" `
+  --policy-set-definition $initiativeName `
+  --scope "/subscriptions/$subscriptionId" `
+  --enforcement-mode "DoNotEnforce"
+```
+
+---
+
+## 💡 Notes
+
+- **Enforcement Mode** is set to `DoNotEnforce` to keep all policies in **Audit** mode.
+- You can also assign this at a **Management Group** level by replacing the `--scope` value with:
+  ```
+  /providers/Microsoft.Management/managementGroups/<mgmt-group-id>
+  ```
+
+---
+
+Would you also like a **Terraform version** of this initiative and assignment for IaC environments?
+
 Creating a **dynamic table** in **Kusto Query Language (KQL)** can mean a few things depending on context. If you're referring to **a dynamic array of values** (like a list of dictionaries or JSON-like rows), then you'd use the `datatable` operator with a **`dynamic`** column type.
 
 Here’s how you can **create a dynamic column in a KQL table**, and how to query or expand it.
