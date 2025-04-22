@@ -1,4 +1,71 @@
 
+
+
+Perfect! Here's your updated **Azure Policy Initiative** definition including a **policy definition group** (`WAFCompliance`) in the JSON format — this helps organize the initiative logically in the Azure Portal UI.
+
+---
+
+## 🧾 JSON Template for Initiative with Policy Definition Group
+
+```json
+{
+  "name": "cspm-waf-initiative",
+  "properties": {
+    "displayName": "CSPM WAF Initiative",
+    "description": "Audit WAF settings for App Gateway and Azure Front Door",
+    "policyType": "Custom",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Security"
+    },
+    "parameters": {},
+    "policyDefinitions": [
+      {
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/ApplicationGatewayWAFEnabled",
+        "groupNames": [ "WAFCompliance" ]
+      },
+      {
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/AzureFrontDoorEnableWAF",
+        "groupNames": [ "WAFCompliance" ]
+      },
+      {
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/AzureFrontDoorWAFRateLimitEnabled",
+        "groupNames": [ "WAFCompliance" ]
+      },
+      {
+        "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/AzureFrontDoorWAFBotProtectionEnabled",
+        "groupNames": [ "WAFCompliance" ]
+      }
+    ],
+    "policyDefinitionGroups": [
+      {
+        "name": "WAFCompliance",
+        "displayName": "WAF Compliance Controls",
+        "description": "Policies to validate WAF configurations for Application Gateway and Azure Front Door"
+      }
+    ]
+  }
+}
+```
+
+---
+
+## 📌 How to Deploy the JSON Using Azure CLI
+
+Save the above JSON as `cspm-waf-initiative.json` and run:
+
+```bash
+az policy set-definition create \
+  --name "cspm-waf-initiative" \
+  --definition "cspm-waf-initiative.json" \
+  --subscription <your-subscription-id>
+```
+
+---
+
+Let me know if you'd like:
+- The **Terraform** version of this initiative with group definitions.
+- An **assignment JSON** example for automated deployment.
 Here you go! Below is a **complete Azure Policy Initiative** named **`CSPM WAF Initiative`**, using the 4 verified **built-in policies** for Application Gateway and Azure Front Door WAF configuration — all set to `Audit` mode. This is ready for deployment via **Azure CLI**, **ARM**, or **Terraform (optional)**.
 
 ---
