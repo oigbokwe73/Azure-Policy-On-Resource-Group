@@ -364,13 +364,117 @@ Here's a structured **Implementation Plan** for your **"CSPM WAF Initiative"** u
 
 ---
 
+
+Absolutely! Here's your **expanded implementation plan** that includes applying the **“CSPM WAF Initiative”** at the **Management Subscription** level for broader compliance oversight. This version is suited for environments where governance is managed top-down via a **Management Group** or a dedicated **Management Subscription** used for CSPM.
+
+---
+
+## 📘 **Expanded Implementation Plan: CSPM WAF Initiative (Management Subscription)**
+
+### 🔹 **Initiative Name**
+- `CSPM WAF Initiative`
+
+### 🔹 **Implementer**
+- Obinna Igbokwe
+
+---
+
+## 🏗 **Scope of Implementation**
+| **Scope**             | **Details**                                                                 |
+|----------------------|------------------------------------------------------------------------------|
+| **Primary Scope**     | Applied to the **Management Subscription** to cover all child subscriptions |
+| **Assignment Level**  | `/subscriptions/<Management-Sub-ID>`                                        |
+| **Initiative Mode**   | `Audit` only (no enforcement or remediation)                                |
+| **Coverage**          | App Gateway + Azure Front Door across all environments (Dev, Test, Prod)    |
+
+---
+
+## 🛠️ **Policies within Initiative**
+
+| **#** | **Policy Description** | **Built-in Policy Name (Suggested)** | **Policy Effect** |
+|------|-------------------------|--------------------------------------|-------------------|
+| 1 | App Gateway should be deployed with WAF | `AppGatewayShouldUseWAF` | `Audit` |
+| 2 | Azure Front Door WAF should use specified mode (e.g., Prevention or Detection) | `FrontDoorWAFModeAudit` | `Audit` |
+| 3 | Rate Limit rule should be enabled on Front Door WAF | `FrontDoorRateLimitRuleAudit` | `Audit` |
+| 4 | Bot Protection should be enabled on Front Door WAF | `FrontDoorBotProtectionAudit` | `Audit` |
+
+---
+
+## 📌 **Azure CLI Script (PowerShell Compatible) – Management Subscription Scope**
+
+```powershell
+$mgmtSubId = "<Management-Sub-ID>"
+
+# Create the initiative
+az policy set-definition create `
+  --name "cspm-waf-initiative" `
+  --display-name "CSPM WAF Initiative" `
+  --description "Audit WAF settings for App Gateway and Azure Front Door" `
+  --definitions '[
+    {
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/AppGatewayShouldUseWAF"
+    },
+    {
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/FrontDoorWAFModeAudit"
+    },
+    {
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/FrontDoorRateLimitRuleAudit"
+    },
+    {
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/FrontDoorBotProtectionAudit"
+    }
+  ]' `
+  --subscription $mgmtSubId `
+  --definition-group-name "WAFCompliance" `
+  --policy-type "Custom"
+
+# Assign initiative at management subscription level in AUDIT mode
+az policy assignment create `
+  --name "assign-cspm-waf-mgmt" `
+  --display-name "CSPM WAF Initiative Assignment - Management Sub" `
+  --policy-set-definition "cspm-waf-initiative" `
+  --scope "/subscriptions/$mgmtSubId" `
+  --enforcement-mode "DoNotEnforce"
+```
+
+---
+
+## 🧾 **Risk & Impact Analysis**
+
+| Category        | Detail                                                                 |
+|----------------|------------------------------------------------------------------------|
+| **Risk Level**  | Low – Audit mode only                                                  |
+| **Impact**      | No resource denial, only compliance visibility                         |
+| **Use Case**    | Security posture monitoring without affecting resource creation flows  |
+| **Visibility**  | Violations visible via Azure Policy compliance dashboard               |
+
+---
+
+## 🔁 **Backout Plan**
+
+- **To Disable/Remove Assignment** (no restart or downtime required):
+```bash
+az policy assignment delete --name "assign-cspm-waf-mgmt"
+```
+
+---
+
+## 🧪 **Validation Approach**
+
+| Stage   | Action                                                                 |
+|---------|------------------------------------------------------------------------|
+| **Dev** | Deploy initiative + validate audit logs appear in policy dashboard     |
+| **Prod**| Expand initiative scope after confirming no false positives in Dev     |
+| **Final**| Confirm regular posture review is included in Azure Security Center |
+
+---
+
+Would you like me to generate a **Terraform version** of this initiative at the **management subscription level** too? Or create a **Mermaid diagram** to visualize the flow from App Gateway/Front Door to Policy to Compliance Dashboard?
+
 ## 📘 **Implementation Plan: CSPM WAF Initiative**
 
 ### 🔹 **Initiative Name**
 - **CSPM WAF Initiative**
-
-### 🔹 **Implementer**
-- **Obinna Igbokwe**
 
 ---
 
