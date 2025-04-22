@@ -1,4 +1,64 @@
+Great — here's exactly how to include the `--definition-groups` flag when creating a **policy set definition** using **Azure CLI**, with properly structured `--definitions` and `--definition-groups`.
 
+---
+
+## ✅ Final Command: `az policy set-definition create` with `--definition-groups`
+
+### 🔹 Example AZ CLI Command (with JSON inline)
+
+```bash
+az policy set-definition create \
+  --name "cspm-waf-initiative" \
+  --display-name "CSPM WAF Initiative" \
+  --description "Audit WAF settings across Application Gateway and Azure Front Door" \
+  --policy-type "Custom" \
+  --subscription "<your-subscription-id>" \
+  --definitions '[
+    {
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/ApplicationGatewayWAFEnabled",
+      "groupNames": ["WAFCompliance"]
+    },
+    {
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/AzureFrontDoorEnableWAF",
+      "groupNames": ["WAFCompliance"]
+    },
+    {
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/AzureFrontDoorWAFRateLimitEnabled",
+      "groupNames": ["WAFProtection"]
+    },
+    {
+      "policyDefinitionId": "/providers/Microsoft.Authorization/policyDefinitions/AzureFrontDoorWAFBotProtectionEnabled",
+      "groupNames": ["WAFProtection"]
+    }
+  ]' \
+  --definition-groups '[
+    {
+      "name": "WAFCompliance",
+      "displayName": "WAF Compliance",
+      "description": "Audits if WAF is properly enabled for App Gateway and Front Door"
+    },
+    {
+      "name": "WAFProtection",
+      "displayName": "WAF Protection Rules",
+      "description": "Audits advanced rules like Rate Limiting and Bot Protection on Front Door"
+    }
+  ]'
+```
+
+---
+
+### 💡 Notes:
+- The `--definitions` argument maps each policy to a group via `groupNames`.
+- The `--definition-groups` declares the group metadata that will appear in the Azure Portal under the initiative.
+- All policies are **built-in**, so no parameter mapping is required here (but you could add it via `--params` if needed).
+
+---
+
+Would you like to:
+- Export the initiative as an **ARM template** for reuse?
+- Deploy it via **Terraform** with the same grouping?
+
+Let me know how you’d like to follow up!
 
 
 Perfect! Here's your updated **Azure Policy Initiative** definition including a **policy definition group** (`WAFCompliance`) in the JSON format — this helps organize the initiative logically in the Azure Portal UI.
