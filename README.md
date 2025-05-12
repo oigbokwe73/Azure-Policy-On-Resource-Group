@@ -3,6 +3,70 @@ Here's a PowerShell script using Azure CLI to retrieve **creation dates of all A
 > ⚠️ Resource Groups in Azure **do not natively store the creation timestamp** as a property. However, you can approximate the creation time by checking the `createdTime` from the **Activity Logs**.
 
 ---
+To retrieve **Azure Resource Group creation dates using Microsoft Graph API**, note that **Microsoft Graph does *not*** expose resource group details like creation dates. Instead, for **Azure resource metadata**, including creation timestamps, you must query the **Azure Resource Graph**, not Microsoft Graph.
+
+---
+
+### ✅ PowerShell Script Using **Azure Resource Graph API**
+
+This script uses the **Azure Resource Graph** to query the `resourcecontainers` table for resource groups and extracts their `createdTime` (if available) from the system metadata.
+
+> ⚠️ This approach requires the **Az.ResourceGraph** PowerShell module.
+
+---
+
+### 🔧 Step-by-Step PowerShell Script
+
+```powershell
+# Prerequisites: Install Az module if not present
+# Install-Module -Name Az -Scope CurrentUser -Repository PSGallery -Force
+
+# Login to Azure
+Connect-AzAccount
+
+# Set the subscription context
+$subscriptionId = "<your-subscription-id>"
+Set-AzContext -SubscriptionId $subscriptionId
+
+# Import Resource Graph module
+Import-Module Az.ResourceGraph
+
+# Query Resource Graph for Resource Groups
+$query = @"
+ResourceContainers
+| where type == 'microsoft.resources/subscriptions/resourcegroups'
+| project name, subscriptionId, location, tags, createdDateTime=tostring(properties.provisioningStateTransitionTime)
+"@
+
+# Execute query
+$results = Search-AzGraph -Query $query -Subscription $subscriptionId
+
+# Output results to CSV
+$outputPath = ".\resource_groups_creation_dates.csv"
+$results | Select-Object name, subscriptionId, location, createdDateTime | Export-Csv -Path $outputPath -NoTypeInformation
+
+Write-Host "Exported to $outputPath"
+```
+
+---
+
+### 📌 What You Get
+
+The CSV file will contain:
+
+* Resource Group Name
+* Subscription ID
+* Location
+* Creation Time (from `provisioningStateTransitionTime`, which is close to creation)
+
+---
+
+### 📘 Additional Notes
+
+* `provisioningStateTransitionTime` is often the best available approximation of creation time.
+* For more accuracy, you could correlate this with Activity Logs, but this solution is fast and scalable across subscriptions.
+
+Would you like a version that loops across **all subscriptions**?
 
 ### ✅ PowerShell Script Using Azure CLI
 
