@@ -1,3 +1,65 @@
+Here's a PowerShell script using Azure CLI to retrieve **creation dates of all Azure Resource Groups in a subscription** and output the results to a CSV file:
+
+> ⚠️ Resource Groups in Azure **do not natively store the creation timestamp** as a property. However, you can approximate the creation time by checking the `createdTime` from the **Activity Logs**.
+
+---
+
+### ✅ PowerShell Script Using Azure CLI
+
+```powershell
+# Login to Azure if not already authenticated
+az login
+
+# Set the subscription (optional if already set)
+$subscriptionId = "<your-subscription-id>"
+az account set --subscription $subscriptionId
+
+# Get all resource groups
+$resourceGroups = az group list --query "[].name" -o tsv
+
+# Create an empty list to store results
+$results = @()
+
+foreach ($rg in $resourceGroups) {
+    # Query activity logs for the earliest 'Create' event for the resource group
+    $activityLog = az monitor activity-log list `
+        --resource-group $rg `
+        --max-events 1 `
+        --query "[?operationName.value=='Microsoft.Resources/subscriptions/resourceGroups/write'].{Name:resourceGroupName, Time:eventTimestamp}" `
+        -o json
+
+    $data = $activityLog | ConvertFrom-Json
+    if ($data) {
+        $results += [PSCustomObject]@{
+            ResourceGroup = $data[0].Name
+            CreationTime  = $data[0].Time
+        }
+    } else {
+        $results += [PSCustomObject]@{
+            ResourceGroup = $rg
+            CreationTime  = "Not Found"
+        }
+    }
+}
+
+# Export to CSV
+$outputPath = ".\resource_group_creation_dates.csv"
+$results | Export-Csv -Path $outputPath -NoTypeInformation
+
+Write-Host "Resource group creation dates exported to $outputPath"
+```
+
+---
+
+### 🔍 Notes
+
+* `az monitor activity-log list` is used to retrieve the first write operation for the resource group, which is typically the creation time.
+* The script uses a maximum of one event (`--max-events 1`) filtered to the write operation.
+* This approach may not work for **very old resource groups** if the log retention period has passed (typically 90 days unless extended).
+
+Would you like a version using **Azure PowerShell module (`Az`)** instead of CLI?
+
+
 Good question — **Azure itself does not enforce a strict naming convention** for Managed Identities, but **best practices** recommend adopting a consistent and meaningful naming **standard** across your environment for clarity, security, and lifecycle management.
 
 Here’s what’s commonly followed:
