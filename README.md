@@ -1,3 +1,55 @@
+The command:
+
+```bash
+az group deployment list -g <resource-group-name>
+```
+
+**does not directly give you the creation time** of the resource group. However, you can **approximate the creation time** by retrieving the **earliest deployment** in that resource group — since a deployment often happens at the time of RG creation (especially if created via ARM/Bicep/Terraform).
+
+---
+
+### ✅ PowerShell Script Using `az group deployment list`
+
+This script calls `az group deployment list` and finds the **oldest deployment timestamp**, which can serve as a proxy for RG creation time.
+
+```powershell
+# Define the resource group name
+$resourceGroupName = "<your-resource-group-name>"
+
+# Get all deployments in the RG and convert to objects
+$deployments = az group deployment list -g $resourceGroupName --query "[].{name:name, timestamp:properties.timestamp}" -o json | ConvertFrom-Json
+
+if ($deployments.Count -gt 0) {
+    # Find the earliest deployment by timestamp
+    $earliestDeployment = $deployments | Sort-Object timestamp | Select-Object -First 1
+
+    Write-Host "Resource Group: $resourceGroupName"
+    Write-Host "Approximate Creation Time (from earliest deployment): $($earliestDeployment.timestamp)"
+} else {
+    Write-Host "No deployments found for Resource Group: $resourceGroupName"
+    Write-Host "Creation time cannot be inferred from deployments."
+}
+```
+
+---
+
+### 📘 What This Does
+
+* Lists all deployments in a resource group.
+* Extracts the `properties.timestamp` (this is when the deployment was triggered).
+* Picks the **oldest deployment**, assuming it may correlate with RG creation.
+
+---
+
+### 🔎 Limitation
+
+* **Only works** if the RG was created with a deployment.
+* **Not reliable** if deployments were added later, or if the RG was created manually or via Portal.
+
+---
+
+Would you like a version of this that loops over **all resource groups** in your subscription and exports all inferred creation dates to CSV?
+
 Here's a **PowerShell script** that retrieves the **creation time of Azure Resource Groups** using **three different methods** where possible:
 
 ---
