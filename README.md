@@ -1,3 +1,101 @@
+Here's a **PowerShell script** that retrieves the **creation time of Azure Resource Groups** using **three different methods** where possible:
+
+---
+
+### ✅ PowerShell Script: Retrieve RG Creation Time (Multiple Strategies)
+
+```powershell
+# Login if not already authenticated
+Connect-AzAccount
+
+# Set Subscription
+$subscriptionId = "<your-subscription-id>"  # Replace with your subscription ID
+Set-AzContext -SubscriptionId $subscriptionId
+
+# Load modules
+Import-Module Az.ResourceGraph
+Import-Module Az.Monitor
+
+# Define output array
+$results = @()
+
+# Get all resource groups
+$resourceGroups = Get-AzResourceGroup
+
+foreach ($rg in $resourceGroups) {
+    $rgName = $rg.ResourceGroupName
+    $location = $rg.Location
+    $createdFromGraph = $null
+    $createdFromActivity = $null
+
+    # --- METHOD 1: Resource Graph Query ---
+    $graphQuery = @"
+ResourceContainers
+| where type == "microsoft.resources/subscriptions/resourcegroups"
+| where name == '$rgName'
+| project createdTime = tostring(properties.provisioningStateTransitionTime)
+"@
+
+    $graphResult = Search-AzGraph -Query $graphQuery -First 1
+    if ($graphResult) {
+        $createdFromGraph = $graphResult.createdTime
+    }
+
+    # --- METHOD 2: Activity Log Lookup ---
+    $activityLogs = Get-AzActivityLog `
+        -ResourceGroupName $rgName `
+        -StartTime (Get-Date).AddDays(-90) `
+        -MaxRecord 10 |
+        Where-Object { $_.OperationName.Value -eq "Microsoft.Resources/subscriptions/resourceGroups/write" } |
+        Sort-Object EventTimestamp |
+        Select-Object -First 1
+
+    if ($activityLogs) {
+        $createdFromActivity = $activityLogs.EventTimestamp
+    }
+
+    # Add to result
+    $results += [PSCustomObject]@{
+        ResourceGroup         = $rgName
+        Location              = $location
+        Created_From_Graph    = $createdFromGraph
+        Created_From_Activity = $createdFromActivity
+    }
+}
+
+# Export to CSV
+$csvPath = ".\RG_Creation_Timestamps.csv"
+$results | Export-Csv -Path $csvPath -NoTypeInformation
+
+Write-Host "`n✅ Export complete: $csvPath"
+```
+
+---
+
+### 📌 Output Columns
+
+| Column                  | Description                                      |
+| ----------------------- | ------------------------------------------------ |
+| ResourceGroup           | Name of the Resource Group                       |
+| Location                | Azure region                                     |
+| Created\_From\_Graph    | Timestamp from Resource Graph metadata           |
+| Created\_From\_Activity | Timestamp from Activity Logs (if within 90 days) |
+
+---
+
+### 🔒 Requirements
+
+* **Az PowerShell Modules** (`Az.Accounts`, `Az.ResourceGraph`, `Az.Monitor`)
+* Permissions to access:
+
+  * Resource Graph
+  * Activity Logs (reader permissions or higher)
+  * Resource Group metadata
+
+---
+
+Would you like to extend this script to **all subscriptions you have access to** or include **tag extraction like `CreatedBy` or `CreatedDate`** if available?
+
 Here's a PowerShell script using Azure CLI to retrieve **creation dates of all Azure Resource Groups in a subscription** and output the results to a CSV file:
 
 > ⚠️ Resource Groups in Azure **do not natively store the creation timestamp** as a property. However, you can approximate the creation time by checking the `createdTime` from the **Activity Logs**.
