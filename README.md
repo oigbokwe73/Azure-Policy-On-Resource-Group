@@ -1,3 +1,76 @@
+
+Here is the **updated PowerShell script** that:
+
+* Loops over **all resource groups** in the current subscription.
+* Uses `az group deployment list` to fetch the **earliest deployment timestamp**.
+* Outputs a CSV with the following columns:
+
+  * `SubscriptionId`
+  * `ResourceGroup`
+  * `CreationTime` (from earliest deployment)
+
+---
+
+### ✅ PowerShell Script
+
+```powershell
+# Ensure Azure CLI is logged in
+az login
+
+# Set your subscription (optional if already set)
+$subscriptionId = "<your-subscription-id>"   # Replace with your subscription ID
+az account set --subscription $subscriptionId
+
+# Get all resource groups
+$resourceGroups = az group list --query "[].name" -o tsv
+
+# Prepare output array
+$results = @()
+
+foreach ($rg in $resourceGroups) {
+    # Get deployments for the resource group
+    $deploymentsJson = az group deployment list -g $rg --query "[].{timestamp:properties.timestamp}" -o json
+    $deployments = $deploymentsJson | ConvertFrom-Json
+
+    # Sort by timestamp and get the earliest one
+    if ($deployments.Count -gt 0) {
+        $earliest = $deployments | Sort-Object timestamp | Select-Object -First 1
+        $creationTime = $earliest.timestamp
+    } else {
+        $creationTime = "No Deployments Found"
+    }
+
+    # Get subscription ID from CLI (just once)
+    $subscription = az account show --query "id" -o tsv
+
+    # Add to results
+    $results += [PSCustomObject]@{
+        SubscriptionId = $subscription
+        ResourceGroup  = $rg
+        CreationTime   = $creationTime
+    }
+}
+
+# Export to CSV
+$outputPath = ".\ResourceGroup_CreationTimes.csv"
+$results | Export-Csv -Path $outputPath -NoTypeInformation -Append
+
+Write-Host "`n✅ Output saved to $outputPath"
+```
+
+---
+
+### 📝 Output Example (CSV)
+
+| SubscriptionId | ResourceGroup | CreationTime         |
+| -------------- | ------------- | -------------------- |
+| xxxxxxxx-...   | MyAppRG       | 2023-10-01T14:22:00Z |
+| xxxxxxxx-...   | NetworkRG     | No Deployments Found |
+
+---
+
+Would you like to include the **Location** of each Resource Group or check across **all subscriptions** you have access to?
+
 The command:
 
 ```bash
