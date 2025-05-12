@@ -1,5 +1,55 @@
 Here's an updated version of the script that supports **multiple Azure subscriptions** from a JSON array. It loops through each subscription, gathers resource groups, retrieves the earliest deployment timestamp for each RG, and appends all results to a single CSV file.
 
+
+The `timestamp` field in the output of `az group deployment list -g $rg --query "[].{timestamp:properties.timestamp}"` reflects the **timestamp of the deployment event** in the specified resource group. Specifically, it indicates **when the deployment operation occurred**, and is derived from the `properties.timestamp` field of each deployment record.
+
+However, depending on your use case, there are a few **related timestamps** in Azure deployments and where they can be found:
+
+---
+
+### 🔹 Deployment Timestamp Locations (`az group deployment list`)
+
+| Field                                             | Description                                                                     | Path                              |
+| ------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------- |
+| `properties.timestamp`                            | **Primary timestamp** showing when the deployment was executed.                 | `deployment.properties.timestamp` |
+| `properties.provisioningState`                    | Indicates deployment result (`Succeeded`, `Failed`, etc.), but not a timestamp. | N/A                               |
+| `properties.duration` (if available)              | Total time the deployment took (less common).                                   | `deployment.properties.duration`  |
+| `properties.dependencies[].dependsOn[].timestamp` | Timestamps from nested/resource deployments (rarely surfaced directly).         | For nested deployments only       |
+
+---
+
+### 🔹 Example Output (Simplified)
+
+```json
+[
+  {
+    "timestamp": "2024-05-10T15:22:10.123456Z"
+  },
+  {
+    "timestamp": "2024-04-18T09:43:57.789012Z"
+  }
+]
+```
+
+---
+
+### 🔹 Other Related Timestamps You May Encounter
+
+If you're looking deeper (e.g. with Azure Resource Graph or diagnostics), you might encounter:
+
+* `properties.createdTime`: When the deployment record was created.
+* `properties.lastModifiedTime`: When the deployment was last modified.
+* `properties.completedOn`: When the deployment finished (rare in CLI).
+
+You can explore them with:
+
+```bash
+az group deployment list -g $rg --query "[].{name:name, created:properties.createdTime, modified:properties.lastModifiedTime, timestamp:properties.timestamp}"
+```
+
+Would you like a sample script to export this to a CSV file with readable timestamps?
+
+
 ---
 
 ### ✅ Sample JSON Input
