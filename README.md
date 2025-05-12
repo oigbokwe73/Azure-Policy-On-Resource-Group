@@ -1,3 +1,78 @@
+Here's an updated version of the script that supports **multiple Azure subscriptions** from a JSON array. It loops through each subscription, gathers resource groups, retrieves the earliest deployment timestamp for each RG, and appends all results to a single CSV file.
+
+---
+
+### ✅ Sample JSON Input
+
+Make sure you have a JSON file like this (e.g., `subscriptions.json`):
+
+```json
+[
+  { "subscriptionId": "11111111-aaaa-bbbb-cccc-111111111111" },
+  { "subscriptionId": "22222222-dddd-eeee-ffff-222222222222" }
+]
+```
+
+---
+
+### ✅ Updated PowerShell Script (Multiple Subscriptions)
+
+```powershell
+# Path to the JSON file with subscription IDs
+$jsonPath = ".\subscriptions.json"
+$subscriptions = Get-Content -Raw -Path $jsonPath | ConvertFrom-Json
+
+# CSV output path
+$outputPath = ".\ResourceGroup_CreationTimes.csv"
+$results = @()
+
+foreach ($sub in $subscriptions) {
+    $subscriptionId = $sub.subscriptionId
+    Write-Host "`n🔄 Switching to Subscription: $subscriptionId"
+    az account set --subscription $subscriptionId
+
+    # Get all resource groups for this subscription
+    $resourceGroups = az group list --query "[].name" -o tsv
+
+    foreach ($rg in $resourceGroups) {
+        Write-Host "➡️ Processing Resource Group: $rg"
+
+        # Get earliest deployment timestamp
+        $deploymentsJson = az group deployment list -g $rg --query "[].{timestamp:properties.timestamp}" -o json
+        $deployments = $deploymentsJson | ConvertFrom-Json
+
+        if ($deployments.Count -gt 0) {
+            $earliest = $deployments | Sort-Object timestamp | Select-Object -First 1
+            $creationTime = $earliest.timestamp
+        } else {
+            $creationTime = "No Deployments Found"
+        }
+
+        # Add result
+        $results += [PSCustomObject]@{
+            SubscriptionId = $subscriptionId
+            ResourceGroup  = $rg
+            CreationTime   = $creationTime
+        }
+    }
+}
+
+# Export to CSV
+$results | Export-Csv -Path $outputPath -NoTypeInformation
+
+Write-Host "`n✅ All resource group creation times exported to: $outputPath"
+```
+
+---
+
+### 📌 Notes
+
+* This script sets the context for each subscription using `az account set`.
+* The deployments' timestamps are retrieved using `az group deployment list`.
+* It gracefully handles RGs with **no deployments**.
+* Results are **accumulated and exported at once**.
+
+Would you like to also include resource group **locations or tags** in the final CSV?
 
 Here is the **updated PowerShell script** that:
 
