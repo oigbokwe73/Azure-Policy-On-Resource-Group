@@ -1,3 +1,50 @@
+To query **created resource groups** in Azure using **Kusto Query Language (KQL)**, you typically rely on **AzureActivity logs**, which record management operations like `Microsoft.Resources/subscriptions/resourceGroups/write`.
+
+---
+
+### ✅ KQL Query to List Created Resource Groups
+
+```kql
+AzureActivity
+| where OperationNameValue == "Microsoft.Resources/subscriptions/resourceGroups/write"
+      and ActivityStatusValue == "Succeeded"
+      and ResourceGroupName != ""
+| project TimeGenerated, ResourceGroupName, Caller, SubscriptionId, ResourceId, CorrelationId
+| order by TimeGenerated desc
+```
+
+---
+
+### 🔍 Explanation of Key Fields:
+
+| Column              | Description                                            |
+| ------------------- | ------------------------------------------------------ |
+| `TimeGenerated`     | Timestamp of the resource group creation               |
+| `ResourceGroupName` | Name of the created resource group                     |
+| `Caller`            | User/service principal that created the resource group |
+| `SubscriptionId`    | Subscription where the resource group was created      |
+| `ResourceId`        | Full ARM resource ID of the resource group             |
+| `CorrelationId`     | Useful for tracing associated operations               |
+
+---
+
+### 📅 Optional: Filter by Time Range (e.g., last 30 days)
+
+```kql
+| where TimeGenerated > ago(30d)
+```
+
+---
+
+### 📁 Optional: Export to CSV in Log Analytics
+
+* Once you run the query in **Log Analytics**, click on **"Export" > "CSV"**.
+
+---
+
+Let me know if you'd like a version that filters by **specific subscriptions**, **tags**, or **regions**.
+
+
 Here's an updated version of the script that supports **multiple Azure subscriptions** from a JSON array. It loops through each subscription, gathers resource groups, retrieves the earliest deployment timestamp for each RG, and appends all results to a single CSV file.
 
 
