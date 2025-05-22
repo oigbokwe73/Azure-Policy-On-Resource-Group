@@ -1,3 +1,84 @@
+Here’s the updated PowerShell script that:
+
+✅ **Filters subscriptions** whose name contains `"paas"` (case-insensitive)
+✅ **Enumerates resource groups** in those subscriptions
+✅ **Fetches RBAC role assignments** at the **resource group level**
+✅ Resolves principal names and exports the data to a **CSV**
+
+---
+
+### 🎯 Updated Script: Filter Subscriptions with Name Containing `"paas"`
+
+```powershell
+# Prerequisite: Install Az module & authenticate
+# Install-Module -Name Az -AllowClobber -Scope CurrentUser
+# Connect-AzAccount
+
+# Output file path
+$outputFile = "PaaS_Subscriptions_RG_RoleAssignments.csv"
+$results = @()
+
+# Get all subscriptions and filter only those with "paas" in the name
+$paasSubscriptions = Get-AzSubscription | Where-Object { $_.Name -match "(?i)paas" }
+
+foreach ($sub in $paasSubscriptions) {
+    # Set the current subscription context
+    Set-AzContext -SubscriptionId $sub.Id | Out-Null
+    Write-Host "🔍 Processing subscription: $($sub.Name)" -ForegroundColor Cyan
+
+    # Get all resource groups in the current subscription
+    $resourceGroups = Get-AzResourceGroup
+
+    foreach ($rg in $resourceGroups) {
+        $roleAssignments = Get-AzRoleAssignment -Scope $rg.ResourceId
+
+        foreach ($role in $roleAssignments) {
+            # Attempt to resolve the principal's name
+            $objectDetails = Get-AzADUser -ObjectId $role.ObjectId -ErrorAction SilentlyContinue
+            if (-not $objectDetails) {
+                $objectDetails = Get-AzADGroup -ObjectId $role.ObjectId -ErrorAction SilentlyContinue
+            }
+            if (-not $objectDetails) {
+                $objectDetails = Get-AzADServicePrincipal -ObjectId $role.ObjectId -ErrorAction SilentlyContinue
+            }
+
+            $principalName = if ($objectDetails.DisplayName) { $objectDetails.DisplayName } else { $role.ObjectId }
+
+            $results += [PSCustomObject]@{
+                SubscriptionName   = $sub.Name
+                SubscriptionId     = $sub.Id
+                ResourceGroupName  = $rg.ResourceGroupName
+                RoleDefinitionName = $role.RoleDefinitionName
+                PrincipalName      = $principalName
+                PrincipalType      = $role.ObjectType
+                Scope              = $role.Scope
+            }
+        }
+    }
+}
+
+# Export results to CSV
+$results | Export-Csv -Path $outputFile -NoTypeInformation
+
+Write-Host "`n✅ Role assignments for PaaS subscriptions exported to: $outputFile" -ForegroundColor Green
+```
+
+---
+
+### 📌 Match Behavior
+
+* The filter uses `-match "(?i)paas"` which performs a **case-insensitive match** on subscription names.
+
+---
+
+Let me know if you also want to:
+
+* Include inherited subscription-level roles
+* Include tags on resource groups
+* Export in JSON or Excel format instead of CSV
+
+
+
 Here is the **fully integrated PowerShell script** that:
 
 ✅ Uses an **array of subscription IDs or names** to target specific subscriptions
