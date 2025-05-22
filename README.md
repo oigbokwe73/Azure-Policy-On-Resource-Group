@@ -1,3 +1,75 @@
+Here is a PowerShell script that uses the **Azure Az module** to **discover all role assignments at the resource group level** in your subscription. It will enumerate through each resource group and list all **RBAC roles assigned**, including principal name, role definition, and scope.
+
+---
+
+### ✅ PowerShell Script: Discover Role Assignments on Resource Groups
+
+```powershell
+# Prerequisite: Az module must be installed and logged in
+# Install-Module -Name Az -AllowClobber -Scope CurrentUser
+# Connect-AzAccount
+
+# Output CSV file path
+$outputFile = "ResourceGroupRoleAssignments.csv"
+
+# Initialize array to hold results
+$results = @()
+
+# Get all resource groups in the subscription
+$resourceGroups = Get-AzResourceGroup
+
+foreach ($rg in $resourceGroups) {
+    $roleAssignments = Get-AzRoleAssignment -Scope $rg.ResourceId
+
+    foreach ($role in $roleAssignments) {
+        $objectDetails = Get-AzADUser -ObjectId $role.ObjectId -ErrorAction SilentlyContinue
+        if (-not $objectDetails) {
+            $objectDetails = Get-AzADGroup -ObjectId $role.ObjectId -ErrorAction SilentlyContinue
+        }
+        if (-not $objectDetails) {
+            $objectDetails = Get-AzADServicePrincipal -ObjectId $role.ObjectId -ErrorAction SilentlyContinue
+        }
+
+        $principalName = if ($objectDetails.DisplayName) { $objectDetails.DisplayName } else { $role.ObjectId }
+
+        $results += [PSCustomObject]@{
+            ResourceGroupName = $rg.ResourceGroupName
+            RoleDefinitionName = $role.RoleDefinitionName
+            PrincipalName      = $principalName
+            PrincipalType      = $role.ObjectType
+            Scope              = $role.Scope
+        }
+    }
+}
+
+# Export results to CSV
+$results | Export-Csv -Path $outputFile -NoTypeInformation
+
+Write-Host "Role assignments exported to: $outputFile"
+```
+
+---
+
+### 📄 Output CSV Columns
+
+* `ResourceGroupName`
+* `RoleDefinitionName`
+* `PrincipalName`
+* `PrincipalType` (User, Group, ServicePrincipal)
+* `Scope`
+
+---
+
+### 🔧 Notes:
+
+* Make sure you're authenticated: `Connect-AzAccount`
+* This script uses `Get-AzADUser`, `Get-AzADGroup`, and `Get-AzADServicePrincipal` to resolve friendly names.
+* You can modify the scope to check subscription or management group level if needed.
+
+Would you like a version that also includes role assignments **inherited** from the subscription level?
+
+
+
 To query **created resource groups** in Azure using **Kusto Query Language (KQL)**, you typically rely on **AzureActivity logs**, which record management operations like `Microsoft.Resources/subscriptions/resourceGroups/write`.
 
 ---
