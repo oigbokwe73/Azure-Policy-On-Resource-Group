@@ -1,3 +1,83 @@
+
+Here’s the updated PowerShell script that **iterates through all accessible Azure subscriptions**, enumerates all **resource groups in each subscription**, and **lists all RBAC role assignments** at the **resource group scope**. The output includes the **subscription name**, resource group name, role, principal, and scope.
+
+---
+
+### ✅ Updated Script: List RBAC Role Assignments per Resource Group Across Subscriptions
+
+```powershell
+# Prerequisites:
+# Install-Module -Name Az -AllowClobber -Scope CurrentUser
+# Connect-AzAccount
+
+# Output file
+$outputFile = "AllSubscriptions_ResourceGroup_RoleAssignments.csv"
+$results = @()
+
+# Get all accessible subscriptions
+$subscriptions = Get-AzSubscription
+
+foreach ($sub in $subscriptions) {
+    # Set the context to the current subscription
+    Set-AzContext -SubscriptionId $sub.Id | Out-Null
+
+    Write-Host "Processing subscription: $($sub.Name)" -ForegroundColor Cyan
+
+    # Get all resource groups in the current subscription
+    $resourceGroups = Get-AzResourceGroup
+
+    foreach ($rg in $resourceGroups) {
+        $roleAssignments = Get-AzRoleAssignment -Scope $rg.ResourceId
+
+        foreach ($role in $roleAssignments) {
+            # Try resolving user/group/SP name
+            $objectDetails = Get-AzADUser -ObjectId $role.ObjectId -ErrorAction SilentlyContinue
+            if (-not $objectDetails) {
+                $objectDetails = Get-AzADGroup -ObjectId $role.ObjectId -ErrorAction SilentlyContinue
+            }
+            if (-not $objectDetails) {
+                $objectDetails = Get-AzADServicePrincipal -ObjectId $role.ObjectId -ErrorAction SilentlyContinue
+            }
+
+            $principalName = if ($objectDetails.DisplayName) { $objectDetails.DisplayName } else { $role.ObjectId }
+
+            $results += [PSCustomObject]@{
+                SubscriptionName   = $sub.Name
+                SubscriptionId     = $sub.Id
+                ResourceGroupName  = $rg.ResourceGroupName
+                RoleDefinitionName = $role.RoleDefinitionName
+                PrincipalName      = $principalName
+                PrincipalType      = $role.ObjectType
+                Scope              = $role.Scope
+            }
+        }
+    }
+}
+
+# Export results to CSV
+$results | Export-Csv -Path $outputFile -NoTypeInformation
+
+Write-Host "`n✅ Role assignments exported to: $outputFile" -ForegroundColor Green
+```
+
+---
+
+### 📄 Output CSV Columns
+
+| Column               | Description                               |
+| -------------------- | ----------------------------------------- |
+| `SubscriptionName`   | Name of the Azure subscription            |
+| `SubscriptionId`     | ID of the Azure subscription              |
+| `ResourceGroupName`  | Name of the resource group                |
+| `RoleDefinitionName` | Name of the role (e.g., Contributor)      |
+| `PrincipalName`      | Resolved display name (User/Group/SP)     |
+| `PrincipalType`      | Type: User, Group, ServicePrincipal       |
+| `Scope`              | Scope of role assignment (resource group) |
+
+---
+
+Let me know if you'd like to filter by specific roles (e.g., Owner/Contributor) or include inherited roles from the subscription level!
+
 Here is a PowerShell script that uses the **Azure Az module** to **discover all role assignments at the resource group level** in your subscription. It will enumerate through each resource group and list all **RBAC roles assigned**, including principal name, role definition, and scope.
 
 ---
