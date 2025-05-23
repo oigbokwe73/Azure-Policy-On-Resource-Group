@@ -1,5 +1,65 @@
 Here’s an updated version of the PowerShell script using **Azure CLI** that reads from a JSON file where the `principalName` is specified instead of `principalId`. The script will look up the **object ID (principalId)** of the user, group, or service principal by name before assigning the role.
 
+To install the **Az.Accounts** and **Az.ResourceGraph** PowerShell modules, follow the steps below. These modules are part of the broader [Azure PowerShell](https://learn.microsoft.com/powershell/azure/overview) suite.
+
+---
+
+### ✅ Prerequisites
+
+* PowerShell 5.1 or later (Windows) or PowerShell 7+ (cross-platform).
+* Run PowerShell **as Administrator** to install modules system-wide (optional but recommended).
+* Ensure you have the latest version of [PowerShellGet](https://www.powershellgallery.com/packages/PowerShellGet/) installed.
+
+---
+
+### 🛠 Step-by-Step Installation
+
+#### 🔹 1. Install `Az.Accounts`
+
+```powershell
+Install-Module -Name Az.Accounts -AllowClobber -Scope CurrentUser -Force
+```
+
+#### 🔹 2. Install `Az.ResourceGraph`
+
+```powershell
+Install-Module -Name Az.ResourceGraph -AllowClobber -Scope CurrentUser -Force
+```
+
+> `-Scope CurrentUser` installs the module for the current user only (no admin rights required).
+> `-AllowClobber` allows replacing existing commands if there's a conflict.
+> `-Force` bypasses prompts (optional for scripting).
+
+---
+
+### 🔎 Verify Installation
+
+```powershell
+Get-Module -ListAvailable Az.Accounts
+Get-Module -ListAvailable Az.ResourceGraph
+```
+
+---
+
+### 🔄 Update Modules (Optional)
+
+```powershell
+Update-Module -Name Az.Accounts
+Update-Module -Name Az.ResourceGraph
+```
+
+---
+
+### 🔗 Load the Modules
+
+```powershell
+Import-Module Az.Accounts
+Import-Module Az.ResourceGraph
+```
+
+Let me know if you want to install **all Azure modules** (i.e., `Az` meta-module), or use it inside Azure Automation or a Docker container.
+
+
 ---
 
 ### 📁 Updated JSON File (`roleAssignments.json`)
