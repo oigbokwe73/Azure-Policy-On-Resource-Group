@@ -1,3 +1,97 @@
+Here’s an updated version of the PowerShell script using **Azure CLI** that reads from a JSON file where the `principalName` is specified instead of `principalId`. The script will look up the **object ID (principalId)** of the user, group, or service principal by name before assigning the role.
+
+---
+
+### 📁 Updated JSON File (`roleAssignments.json`)
+
+```json
+[
+  {
+    "subscriptionName": "Visual Studio Enterprise",
+    "resourceGroup": "rg-app-prod",
+    "principalName": "my-app-service-principal",
+    "role": "Contributor"
+  },
+  {
+    "subscriptionName": "Pay-As-You-Go",
+    "resourceGroup": "rg-db-dev",
+    "principalName": "john.doe@contoso.com",
+    "role": "Reader"
+  }
+]
+```
+
+---
+
+### 🧠 Updated PowerShell Script
+
+```powershell
+# Path to the JSON file
+$jsonPath = "roleAssignments.json"
+
+# Read the JSON file
+$assignments = Get-Content $jsonPath | ConvertFrom-Json
+
+foreach ($assignment in $assignments) {
+    $subscriptionName = $assignment.subscriptionName
+    $resourceGroup = $assignment.resourceGroup
+    $principalName = $assignment.principalName
+    $role = $assignment.role
+
+    # Get the subscription ID
+    $subscriptionId = az account list --query "[?name=='$subscriptionName'].id" -o tsv
+    if (-not $subscriptionId) {
+        Write-Warning "Subscription '$subscriptionName' not found."
+        continue
+    }
+
+    # Set Azure CLI context to subscription
+    az account set --subscription $subscriptionId
+
+    # Lookup principal objectId (user, group, or SP)
+    $principalId = az ad user show --id $principalName --query objectId -o tsv 2>$null
+
+    if (-not $principalId) {
+        $principalId = az ad sp show --id $principalName --query objectId -o tsv 2>$null
+    }
+
+    if (-not $principalId) {
+        $principalId = az ad group show --group $principalName --query objectId -o tsv 2>$null
+    }
+
+    if (-not $principalId) {
+        Write-Warning "Principal '$principalName' not found as user, SP, or group."
+        continue
+    }
+
+    # Scope for the role assignment
+    $scope = "/subscriptions/$subscriptionId/resourceGroups/$resourceGroup"
+    Write-Output "Assigning '$role' to '$principalName' at '$scope'..."
+
+    az role assignment create `
+        --assignee-object-id $principalId `
+        --role "$role" `
+        --scope "$scope" `
+        --only-show-errors
+}
+```
+
+---
+
+### 🔐 Notes:
+
+* The script tries to resolve the principal name as:
+
+  1. **Azure AD User**
+  2. **Service Principal**
+  3. **Azure AD Group**
+* Make sure your account has permission to read Azure AD and assign roles.
+* Requires Azure CLI 2.x and logged in using `az login`.
+
+Let me know if you want to add support for resource-level scopes or subscription-level assignments too!
+
+
+
 Here’s the updated PowerShell script that:
 
 ✅ **Filters subscriptions** whose name contains `"paas"` (case-insensitive)
