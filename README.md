@@ -1,13 +1,20 @@
 Below is the **updated Mermaid sequence diagram** with **Power BI replaced by “SI Modules”** (representing Security & Intelligence modules), and logical separation into **Data Collection**, **Access Management**, and **Visualization** layers.
 
 ---
+Here is the **updated Mermaid sequence diagram** with **color-coded logical boundaries** for each layer:
 
-### ✅ **Updated Mermaid Sequence Diagram with Logical Layers**
+* 🟩 **Data Collection Layer** – green
+* 🟦 **Access Management Layer** – blue
+* 🟨 **Visualization Layer (SI Modules)** – yellow
+
+---
+
+### 🎨 **Color-Coded Mermaid Sequence Diagram**
 
 ```mermaid
 sequenceDiagram
-    %% === Logical Layer: Data Collection ===
-    box Data Collection Layer
+    %% === Data Collection Layer (Green) ===
+    box #e8f5e9:Data Collection Layer
         participant User
         participant VM as Azure VM (IIS)
         participant AMA as Azure Monitor Agent (AMA)
@@ -15,62 +22,60 @@ sequenceDiagram
         participant LAW as Log Analytics Workspace
     end
 
-    %% === Logical Layer: Access Management ===
-    box Access Management Layer
+    %% === Access Management Layer (Blue) ===
+    box #e3f2fd:Access Management Layer
         participant Entra as Azure Entra ID
         participant SPN as Azure Service Principal
     end
 
-    %% === Logical Layer: Visualization ===
-    box Visualization Layer
-        participant SI as SI Modules (e.g., Dashboards, Analytics)
+    %% === Visualization Layer (Yellow) ===
+    box #fffde7:Visualization Layer (SI Modules)
+        participant SI as SI Modules<br/>(Dashboards & Analytics)
     end
 
-    %% Step 1: Configure IIS logging
-    User->>VM: Configure IIS logging<br/>Path: C:\inetpub\logs\LogFiles
-    Note right of VM: Logs are written by IIS
+    %% Step 1: IIS logging setup
+    User->>VM: Enable IIS logging<br/>Path: C:\inetpub\logs\LogFiles
+    Note right of VM: IIS generates logs
 
-    %% Step 2: AMA reads IIS logs
-    VM->>AMA: Log file detected (u_ex*.log)
-    AMA->>DCR: Read DCR config for collection rules
-    DCR-->>AMA: Log path and collection format
+    %% Step 2: Log collection via AMA
+    VM->>AMA: IIS logs detected (u_ex*.log)
+    AMA->>DCR: Check rules for collection
+    DCR-->>AMA: Return path & format
+    AMA->>LAW: Send log data
 
-    %% Step 3: AMA sends logs to LAW
-    AMA->>LAW: Forward IIS log data
+    %% Step 3: Register Azure SPN
+    User->>Entra: Register SPN App
+    Entra-->>SPN: Provide App ID & Secret
 
-    %% Step 4: Register Azure Service Principal
-    User->>Entra: Register App (Service Principal)
-    Entra-->>SPN: Issue App ID & Secret
+    %% Step 4: Assign access to LAW
+    User->>LAW: Assign Reader/Query role
+    User->>SPN: Configure KQL access
 
-    %% Step 5: Assign access to SPN
-    User->>LAW: Assign Reader / Query role to SPN
-    User->>SPN: Assign Log Analytics Query permission
+    %% Step 5: Authenticate SI
+    SI->>SPN: Request token (App ID/Secret)
+    SPN->>Entra: OAuth2 authentication
+    Entra-->>SPN: Return access token
+    SPN-->>SI: Token for API access
 
-    %% Step 6: SI Modules Authenticate
-    SI->>SPN: Request token (client credentials)
-    SPN->>Entra: Authenticate using App ID & Secret
-    Entra-->>SPN: Issue OAuth2 Token
-    SPN-->>SI: Token issued
-
-    %% Step 7: Query & Visualize
-    SI->>LAW: Send KQL query for IIS log data
-    LAW-->>SI: Return query results
-    SI->>User: Visualize analytics dashboards
+    %% Step 6: Query and Visualize
+    SI->>LAW: Run KQL for IIS logs
+    LAW-->>SI: Return log results
+    SI->>User: Display dashboards/metrics
 ```
 
 ---
 
-### 📘 **Logical Layer Overview**
+### 🧭 Summary of Color Logic
 
-| Layer                       | Components        | Purpose                                              |
-| --------------------------- | ----------------- | ---------------------------------------------------- |
-| **Data Collection Layer**   | VM, AMA, DCR, LAW | Gathers and stores IIS logs from VMs                 |
-| **Access Management Layer** | Entra ID, SPN     | Manages authentication and secure access to log data |
-| **Visualization Layer**     | SI Modules        | Retrieves and visualizes IIS logs via secure queries |
+| Layer                 | Color                       | Description                            |
+| --------------------- | --------------------------- | -------------------------------------- |
+| **Data Collection**   | 🟩 Light Green (`#e8f5e9`)  | Ingests logs from VM to Log Analytics  |
+| **Access Management** | 🟦 Light Blue (`#e3f2fd`)   | Controls secure access to workspace    |
+| **Visualization**     | 🟨 Light Yellow (`#fffde7`) | Consumes and visualizes data using KQL |
 
 ---
 
-Would you like to include **multiple SI Modules** (e.g., "SI Monitoring", "SI Alerting") or show **scheduled queries and alerts** in the diagram?
+Would you like this rendered into a **PNG diagram** or expanded to include **alerts or automated workflows** from SI Modules (e.g., Logic Apps, Sentinel)?
 
 
 [![Remediate non-compliant resources - Azure Policy | Microsoft Learn](https://tse3.mm.bing.net/th?id=OIP.7jBvP7BpZuRqfEMOjEZqhwHaC4\&pid=Api)](https://learn.microsoft.com/th-th/azure/governance/policy/how-to/remediate-resources)
