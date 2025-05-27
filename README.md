@@ -1,3 +1,78 @@
+Below is the **updated Mermaid sequence diagram** with **Power BI replaced by “SI Modules”** (representing Security & Intelligence modules), and logical separation into **Data Collection**, **Access Management**, and **Visualization** layers.
+
+---
+
+### ✅ **Updated Mermaid Sequence Diagram with Logical Layers**
+
+```mermaid
+sequenceDiagram
+    %% === Logical Layer: Data Collection ===
+    box Data Collection Layer
+        participant User
+        participant VM as Azure VM (IIS)
+        participant AMA as Azure Monitor Agent (AMA)
+        participant DCR as Data Collection Rule (DCR)
+        participant LAW as Log Analytics Workspace
+    end
+
+    %% === Logical Layer: Access Management ===
+    box Access Management Layer
+        participant Entra as Azure Entra ID
+        participant SPN as Azure Service Principal
+    end
+
+    %% === Logical Layer: Visualization ===
+    box Visualization Layer
+        participant SI as SI Modules (e.g., Dashboards, Analytics)
+    end
+
+    %% Step 1: Configure IIS logging
+    User->>VM: Configure IIS logging<br/>Path: C:\inetpub\logs\LogFiles
+    Note right of VM: Logs are written by IIS
+
+    %% Step 2: AMA reads IIS logs
+    VM->>AMA: Log file detected (u_ex*.log)
+    AMA->>DCR: Read DCR config for collection rules
+    DCR-->>AMA: Log path and collection format
+
+    %% Step 3: AMA sends logs to LAW
+    AMA->>LAW: Forward IIS log data
+
+    %% Step 4: Register Azure Service Principal
+    User->>Entra: Register App (Service Principal)
+    Entra-->>SPN: Issue App ID & Secret
+
+    %% Step 5: Assign access to SPN
+    User->>LAW: Assign Reader / Query role to SPN
+    User->>SPN: Assign Log Analytics Query permission
+
+    %% Step 6: SI Modules Authenticate
+    SI->>SPN: Request token (client credentials)
+    SPN->>Entra: Authenticate using App ID & Secret
+    Entra-->>SPN: Issue OAuth2 Token
+    SPN-->>SI: Token issued
+
+    %% Step 7: Query & Visualize
+    SI->>LAW: Send KQL query for IIS log data
+    LAW-->>SI: Return query results
+    SI->>User: Visualize analytics dashboards
+```
+
+---
+
+### 📘 **Logical Layer Overview**
+
+| Layer                       | Components        | Purpose                                              |
+| --------------------------- | ----------------- | ---------------------------------------------------- |
+| **Data Collection Layer**   | VM, AMA, DCR, LAW | Gathers and stores IIS logs from VMs                 |
+| **Access Management Layer** | Entra ID, SPN     | Manages authentication and secure access to log data |
+| **Visualization Layer**     | SI Modules        | Retrieves and visualizes IIS logs via secure queries |
+
+---
+
+Would you like to include **multiple SI Modules** (e.g., "SI Monitoring", "SI Alerting") or show **scheduled queries and alerts** in the diagram?
+
+
 [![Remediate non-compliant resources - Azure Policy | Microsoft Learn](https://tse3.mm.bing.net/th?id=OIP.7jBvP7BpZuRqfEMOjEZqhwHaC4\&pid=Api)](https://learn.microsoft.com/th-th/azure/governance/policy/how-to/remediate-resources)
 
 Certainly! Here are some authoritative Microsoft Learn articles that provide detailed guidance on creating and managing Azure Policy remediation tasks using the `DeployIfNotExists` effect:
