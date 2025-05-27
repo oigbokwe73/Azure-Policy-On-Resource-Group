@@ -1,3 +1,40 @@
+[![Remediate non-compliant resources - Azure Policy | Microsoft Learn](https://tse3.mm.bing.net/th?id=OIP.7jBvP7BpZuRqfEMOjEZqhwHaC4\&pid=Api)](https://learn.microsoft.com/th-th/azure/governance/policy/how-to/remediate-resources)
+
+Certainly! Here are some authoritative Microsoft Learn articles that provide detailed guidance on creating and managing Azure Policy remediation tasks using the `DeployIfNotExists` effect:
+
+---
+
+### 📘 Key Microsoft Learn Resources
+
+1. **[Remediate Non-Compliant Resources with Azure Policy](https://learn.microsoft.com/en-us/azure/governance/policy/how-to/remediate-resources)**
+
+   * This article explains how to bring existing resources into compliance by creating remediation tasks for policies with `deployIfNotExists` or `modify` effects. It covers configuring managed identities and assigning necessary roles.([Microsoft Learn][1])
+
+2. **[Azure Policy Definitions: DeployIfNotExists Effect](https://learn.microsoft.com/en-us/azure/governance/policy/concepts/effect-deploy-if-not-exists)**
+
+   * Provides an in-depth look at the `deployIfNotExists` policy effect, including how it evaluates resources and triggers deployments when conditions are met.
+
+3. **[Azure Policy Remediation Task Structure](https://learn.microsoft.com/en-us/azure/governance/policy/concepts/remediation-structure)**
+
+   * Details the structure of remediation tasks, including properties like `policyAssignmentId`, `policyDefinitionReferenceId`, and `resourceDiscoveryMode`.
+
+4. **[Azure Policy Assignment Structure](https://learn.microsoft.com/en-us/azure/governance/policy/concepts/assignment-structure)**
+
+   * Explains how to structure policy assignments, including how to associate managed identities and specify locations for system-assigned identities.([Microsoft Learn][2])
+
+5. **[Safe Deployment of Azure Policy Assignments](https://learn.microsoft.com/en-us/azure/governance/policy/how-to/policy-safe-deployment-practices)**
+
+   * Outlines best practices for safely deploying policies, including using deployment rings and gradually enforcing policies to minimize impact.([Microsoft Learn][3])
+
+---
+
+If you need further assistance or examples tailored to specific scenarios, feel free to ask!
+
+[1]: https://learn.microsoft.com/th-th/azure/governance/policy/how-to/remediate-resources?utm_source=chatgpt.com "Remediate non-compliant resources - Azure Policy | Microsoft Learn"
+[2]: https://learn.microsoft.com/en-us/azure/azure-monitor/agents/azure-monitor-agent-policy?utm_source=chatgpt.com "Use Azure Policy to Install the Azure Monitor Agent - Learn Microsoft"
+[3]: https://learn.microsoft.com/en-us/azure/governance/policy/how-to/policy-safe-deployment-practices?utm_source=chatgpt.com "Safe deployment of Azure Policy assignments - Learn Microsoft"
+
+
 Here’s an updated version of the PowerShell script using **Azure CLI** that reads from a JSON file where the `principalName` is specified instead of `principalId`. The script will look up the **object ID (principalId)** of the user, group, or service principal by name before assigning the role.
 
 To install the **Az.Accounts** and **Az.ResourceGraph** PowerShell modules, follow the steps below. These modules are part of the broader [Azure PowerShell](https://learn.microsoft.com/powershell/azure/overview) suite.
