@@ -13,22 +13,22 @@ Here is the **updated Mermaid sequence diagram** with **color-coded logical boun
 
 ```mermaid
 sequenceDiagram
-    %% === Data Collection Layer (Green) ===
+    %% === MES Modules (Green) ===
     box #e8f5e9:Data Collection Layer
-        participant User
+        participant Tech Team
         participant VM as Azure VM (IIS)
         participant AMA as Azure Monitor Agent (AMA)
         participant DCR as Data Collection Rule (DCR)
         participant LAW as Log Analytics Workspace
     end
 
-    %% === Access Management Layer (Blue) ===
+    %% === MES Modules (Blue) ===
     box #e3f2fd:Access Management Layer
         participant Entra as Azure Entra ID
         participant SPN as Azure Service Principal
     end
 
-    %% === Visualization Layer (Yellow) ===
+    %% === SI Modules (Yellow) ===
     box #fffde7:Visualization Layer (SI Modules)
         participant SI as SI Modules<br/>(Dashboards & Analytics)
     end
