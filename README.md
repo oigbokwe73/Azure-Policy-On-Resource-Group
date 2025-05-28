@@ -60,7 +60,7 @@ sequenceDiagram
     %% Step 6: Query and Visualize
     SI->>LAW: Run KQL for IIS logs
     LAW-->>SI: Return log results
-    SI->>User: Display dashboards/metrics
+    SI->>Tech Team: Display dashboards/metrics
 ```
 
 ---
