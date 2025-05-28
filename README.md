@@ -44,12 +44,12 @@ sequenceDiagram
     AMA->>LAW: Send log data
 
     %% Step 3: Register Azure SPN
-    User->>Entra: Register SPN App
+    Tech Team->>Entra: Register SPN App
     Entra-->>SPN: Provide App ID & Secret
 
     %% Step 4: Assign access to LAW
-    User->>LAW: Assign Reader/Query role
-    User->>SPN: Configure KQL access
+    Tech Team->>LAW: Assign Reader/Query role
+    Tech Team->>SPN: Configure KQL access
 
     %% Step 5: Authenticate SI
     SI->>SPN: Request token (App ID/Secret)
