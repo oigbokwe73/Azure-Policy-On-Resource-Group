@@ -34,7 +34,7 @@ sequenceDiagram
     end
 
     %% Step 1: IIS logging setup
-    User->>VM: Enable IIS logging<br/>Path: C:\inetpub\logs\LogFiles
+    Tech Team->>VM: Enable IIS logging<br/>Path: C:\inetpub\logs\LogFiles
     Note right of VM: IIS generates logs
 
     %% Step 2: Log collection via AMA
