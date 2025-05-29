@@ -1,36 +1,37 @@
 
-Here's the updated **Mermaid sequence diagram** where **"MES Module"** has been replaced with **"SI Module"** to reflect a Security & Intelligence module consuming data from **Log Analytics Workspace** using a **Service Principal**, authenticated via **Azure Entra ID**.
+Here’s your updated **Mermaid sequence diagram** with the **Azure Service Principal (SPN)**, **Azure Entra ID**, and **Log Analytics Workspace (LAW)** grouped under a single **Azure Identity & Monitoring Services** boundary.
 
 ---
 
-### 🔐 **Updated Mermaid Sequence Diagram – Log Analytics to SI Module via Entra**
+### 🟦 **Updated Mermaid Sequence Diagram – Unified Azure Group for Identity & Monitoring**
 
 ```mermaid
 sequenceDiagram
-    %% === Access Management Layer ===
-    box #e3f2fd:Access Management Layer (Azure Entra ID)
+    %% === Consumer Layer ===
+    box #fffde7:Consumer Layer (SI Module)
         participant SI as SI Module
-        participant SPN as Azure Service Principal
-        participant Entra as Azure Entra ID
     end
 
-    %% === Data Source Layer ===
-    box #e8f5e9:Data Source Layer (Azure Monitor)
+    %% === Azure Services Layer (Identity & Monitoring)
+    box #e3f2fd:Azure Identity & Monitoring Services
+        participant SPN as Azure Service Principal
+        participant Entra as Azure Entra ID
         participant LAW as Log Analytics Workspace
     end
 
-    %% === Step 1: Authenticate
+    %% Step 1: Authentication Process
     SI->>SPN: (1) Provide App ID & Secret to initiate auth
     SPN->>Entra: (2) Request OAuth2 token via client_credentials
     Entra-->>SPN: (3) Issue access token
-    SPN-->>SI: (4) Return token for API use
+    SPN-->>SI: (4) Return token for use in query
 
-    %% === Step 2: Query Execution
+    %% Step 2: Query Execution
     SI->>LAW: (5) Submit KQL query using access token
     LAW->>Entra: (6) Validate token with Entra ID
-    Entra-->>LAW: (7) Confirm token validity and access
-    LAW-->>SI: (8) Return KQL query result (e.g., IIS logs)
+    Entra-->>LAW: (7) Confirm token is valid
+    LAW-->>SI: (8) Return query results (e.g., IIS logs)
 ```
+
 
 ---
 
