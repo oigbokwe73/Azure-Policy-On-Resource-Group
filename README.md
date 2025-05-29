@@ -1,3 +1,64 @@
+
+Here is a **new Mermaid sequence diagram** focused specifically on the **connectivity between Log Analytics Workspace (LAW) and the MES Module**, including the **authentication steps via Azure Entra ID** using a **Service Principal** (client credentials flow).
+
+---
+
+### 🛡️ **Sequence Diagram – Secure Connectivity: LAW → MES via Entra Authentication**
+
+```mermaid
+sequenceDiagram
+    %% === Access Management Layer ===
+    box #e3f2fd:Access Management Layer (Azure Entra ID)
+        participant MES as MES Module
+        participant SPN as Azure Service Principal
+        participant Entra as Azure Entra ID
+    end
+
+    %% === Data Source Layer ===
+    box #e8f5e9:Data Source Layer (Azure Monitor)
+        participant LAW as Log Analytics Workspace
+    end
+
+    %% === Step 1: MES Authenticates via SPN
+    MES->>SPN: (1) Initiate access using App ID & Secret
+    SPN->>Entra: (2) Request OAuth2 token (client_credentials grant)
+    Entra-->>SPN: (3) Return access token
+    SPN-->>MES: (4) Provide access token for API access
+
+    %% === Step 2: Query Execution
+    MES->>LAW: (5) Send authenticated KQL query using token
+    LAW->>Entra: (6) Validate token
+    Entra-->>LAW: (7) Confirm token is valid
+    LAW-->>MES: (8) Return query result (IIS log data)
+```
+
+---
+
+### 🔐 **Step-by-Step Description of the Flow**
+
+|  # | Actor       | Step Description                                                                                |
+| -: | ----------- | ----------------------------------------------------------------------------------------------- |
+|  1 | MES → SPN   | MES Module initiates the connection by supplying the SPN App ID & Secret.                       |
+|  2 | SPN → Entra | Service Principal authenticates via Entra using the **OAuth2 `client_credentials`** grant type. |
+|  3 | Entra → SPN | Entra issues an **access token** valid for calling Azure Monitor APIs.                          |
+|  4 | SPN → MES   | SPN passes the token to MES Module for use in requests to Log Analytics.                        |
+|  5 | MES → LAW   | MES sends a **KQL query** to the Log Analytics Workspace using the bearer token.                |
+|  6 | LAW → Entra | Log Analytics validates the access token with Entra ID.                                         |
+|  7 | Entra → LAW | Entra confirms that the token is valid and the SPN has access.                                  |
+|  8 | LAW → MES   | Log Analytics returns the query result (e.g., parsed IIS logs).                                 |
+
+---
+
+### ✅ Security Best Practices
+
+* Ensure the SPN has **minimum RBAC**, ideally **Log Analytics Reader** on the workspace.
+* Use **Key Vault** to store App Secret securely if used in automated systems.
+* Use **Managed Identity** if MES is hosted in Azure and supports it (to eliminate secrets).
+
+---
+
+Would you like this rendered as a **PNG/SVG** or want a **sample KQL query** that MES might run against LAW?
+
 Below is the **updated Mermaid sequence diagram** with **Power BI replaced by “SI Modules”** (representing Security & Intelligence modules), and logical separation into **Data Collection**, **Access Management**, and **Visualization** layers.
 
 Below is the fully **updated Mermaid sequence diagram** with:
