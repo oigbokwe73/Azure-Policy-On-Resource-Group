@@ -1,5 +1,98 @@
 Below is the **updated Mermaid sequence diagram** with **Power BI replaced by “SI Modules”** (representing Security & Intelligence modules), and logical separation into **Data Collection**, **Access Management**, and **Visualization** layers.
 
+Below is the fully **updated Mermaid sequence diagram** with:
+
+* **"MES Module"** as the initiating component
+* **Color-coded layers** for clear logical separation
+* **Numbered steps** inline with messages
+* A **detailed explanation table** following the diagram
+
+---
+
+### 🧭 **Mermaid Sequence Diagram — Numbered IIS Log Flow with SI Modules**
+
+```mermaid
+sequenceDiagram
+    %% === Data Collection Layer (Green) ===
+    box #e8f5e9:Data Collection Layer
+        participant MES as MES Module
+        participant VM as Azure VM (IIS)
+        participant AMA as Azure Monitor Agent (AMA)
+        participant DCR as Data Collection Rule (DCR)
+        participant LAW as Log Analytics Workspace
+    end
+
+    %% === Access Management Layer (Blue) ===
+    box #e3f2fd:Access Management Layer
+        participant Entra as Azure Entra ID
+        participant SPN as Azure Service Principal
+    end
+
+    %% === Visualization Layer (Yellow) ===
+    box #fffde7:Visualization Layer (SI Modules)
+        participant SI as SI Modules<br/>(Dashboards & Analytics)
+    end
+
+    %% Step 1: Enable IIS logging
+    MES->>VM: (1) Enable IIS logging<br/>Path: C:\inetpub\logs\LogFiles
+    Note right of VM: IIS writes logs per request
+
+    %% Step 2: AMA log detection
+    VM->>AMA: (2) IIS log file detected (u_ex*.log)
+    AMA->>DCR: (3) Check DCR for path rules
+    DCR-->>AMA: (4) Return path & format to monitor
+
+    %% Step 3: Ingest to Log Analytics
+    AMA->>LAW: (5) Forward logs to Log Analytics Workspace
+
+    %% Step 4: Register Service Principal
+    MES->>Entra: (6) Register SPN in Entra ID
+    Entra-->>SPN: (7) Return App ID & Secret
+
+    %% Step 5: Assign access to SPN
+    MES->>LAW: (8) Assign Reader/KQL role to SPN
+    MES->>SPN: (9) Configure KQL permission
+
+    %% Step 6: Authenticate to Log Analytics
+    SI->>SPN: (10) Request OAuth2 token
+    SPN->>Entra: (11) Perform authentication (App ID + Secret)
+    Entra-->>SPN: (12) Return access token
+    SPN-->>SI: (13) Provide token for access
+
+    %% Step 7: KQL query & visualization
+    SI->>LAW: (14) Send KQL query to fetch logs
+    LAW-->>SI: (15) Return log data
+    SI->>MES: (16) Visualize dashboards & alerts
+```
+
+---
+
+### 📘 **Step-by-Step Explanation Table**
+
+|  # | Step        | Description                                                                                            |
+| -: | ----------- | ------------------------------------------------------------------------------------------------------ |
+|  1 | MES → VM    | MES Module enables IIS logging on the Azure VM, targeting the default path `C:\inetpub\logs\LogFiles`. |
+|  2 | VM → AMA    | Azure Monitor Agent detects IIS log files matching pattern (e.g., `u_ex*.log`).                        |
+|  3 | AMA → DCR   | AMA checks the configured Data Collection Rule for file path and pattern.                              |
+|  4 | DCR → AMA   | DCR confirms log file format and instructs AMA to forward matching logs.                               |
+|  5 | AMA → LAW   | IIS logs are forwarded from the agent to the designated Log Analytics Workspace.                       |
+|  6 | MES → Entra | MES registers an Azure Service Principal in Entra ID for secure access.                                |
+|  7 | Entra → SPN | App ID and Secret credentials are returned for the Service Principal.                                  |
+|  8 | MES → LAW   | SPN is granted “Reader” or “Log Analytics Reader” role to allow query access.                          |
+|  9 | MES → SPN   | SPN is configured with permission to run KQL against the workspace.                                    |
+| 10 | SI → SPN    | SI Modules request access token using the SPN (client credentials flow).                               |
+| 11 | SPN → Entra | SPN authenticates with Entra using its credentials.                                                    |
+| 12 | Entra → SPN | Entra returns an OAuth2 access token.                                                                  |
+| 13 | SPN → SI    | SI Modules receive the token for authenticating queries.                                               |
+| 14 | SI → LAW    | SI Modules send a KQL query to retrieve the collected IIS logs.                                        |
+| 15 | LAW → SI    | Log Analytics returns the log results.                                                                 |
+| 16 | SI → MES    | SI Modules present visual dashboards, trends, or alerts back to MES Module.                            |
+
+---
+
+Would you like this diagram exported as an image (PNG/SVG), or include **alert rules**, **Log Analytics Scheduled Queries**, or **SIEM integration (e.g., Sentinel)** as an extension?
+
+
 ---
 Here is the **updated Mermaid sequence diagram** with **color-coded logical boundaries** for each layer:
 
