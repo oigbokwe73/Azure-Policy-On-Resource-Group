@@ -1,15 +1,15 @@
 
-Here is a **new Mermaid sequence diagram** focused specifically on the **connectivity between Log Analytics Workspace (LAW) and the MES Module**, including the **authentication steps via Azure Entra ID** using a **Service Principal** (client credentials flow).
+Here's the updated **Mermaid sequence diagram** where **"MES Module"** has been replaced with **"SI Module"** to reflect a Security & Intelligence module consuming data from **Log Analytics Workspace** using a **Service Principal**, authenticated via **Azure Entra ID**.
 
 ---
 
-### 🛡️ **Sequence Diagram – Secure Connectivity: LAW → MES via Entra Authentication**
+### 🔐 **Updated Mermaid Sequence Diagram – Log Analytics to SI Module via Entra**
 
 ```mermaid
 sequenceDiagram
     %% === Access Management Layer ===
     box #e3f2fd:Access Management Layer (Azure Entra ID)
-        participant MES as MES Module
+        participant SI as SI Module
         participant SPN as Azure Service Principal
         participant Entra as Azure Entra ID
     end
@@ -19,41 +19,37 @@ sequenceDiagram
         participant LAW as Log Analytics Workspace
     end
 
-    %% === Step 1: MES Authenticates via SPN
-    MES->>SPN: (1) Initiate access using App ID & Secret
-    SPN->>Entra: (2) Request OAuth2 token (client_credentials grant)
-    Entra-->>SPN: (3) Return access token
-    SPN-->>MES: (4) Provide access token for API access
+    %% === Step 1: Authenticate
+    SI->>SPN: (1) Provide App ID & Secret to initiate auth
+    SPN->>Entra: (2) Request OAuth2 token via client_credentials
+    Entra-->>SPN: (3) Issue access token
+    SPN-->>SI: (4) Return token for API use
 
     %% === Step 2: Query Execution
-    MES->>LAW: (5) Send authenticated KQL query using token
-    LAW->>Entra: (6) Validate token
-    Entra-->>LAW: (7) Confirm token is valid
-    LAW-->>MES: (8) Return query result (IIS log data)
+    SI->>LAW: (5) Submit KQL query using access token
+    LAW->>Entra: (6) Validate token with Entra ID
+    Entra-->>LAW: (7) Confirm token validity and access
+    LAW-->>SI: (8) Return KQL query result (e.g., IIS logs)
 ```
 
 ---
 
-### 🔐 **Step-by-Step Description of the Flow**
+### 📘 **Step-by-Step Explanation**
 
-|  # | Actor       | Step Description                                                                                |
-| -: | ----------- | ----------------------------------------------------------------------------------------------- |
-|  1 | MES → SPN   | MES Module initiates the connection by supplying the SPN App ID & Secret.                       |
-|  2 | SPN → Entra | Service Principal authenticates via Entra using the **OAuth2 `client_credentials`** grant type. |
-|  3 | Entra → SPN | Entra issues an **access token** valid for calling Azure Monitor APIs.                          |
-|  4 | SPN → MES   | SPN passes the token to MES Module for use in requests to Log Analytics.                        |
-|  5 | MES → LAW   | MES sends a **KQL query** to the Log Analytics Workspace using the bearer token.                |
-|  6 | LAW → Entra | Log Analytics validates the access token with Entra ID.                                         |
-|  7 | Entra → LAW | Entra confirms that the token is valid and the SPN has access.                                  |
-|  8 | LAW → MES   | Log Analytics returns the query result (e.g., parsed IIS logs).                                 |
+|  # | Interaction | Description                                                             |
+| -: | ----------- | ----------------------------------------------------------------------- |
+|  1 | SI → SPN    | SI Module initiates authentication by using the SPN's App ID and Secret |
+|  2 | SPN → Entra | SPN authenticates with Azure Entra using OAuth2 client credentials flow |
+|  3 | Entra → SPN | Entra issues a secure access token                                      |
+|  4 | SPN → SI    | SPN returns the token to the SI Module for authenticated use            |
+|  5 | SI → LAW    | SI Module sends a KQL query to Log Analytics using the bearer token     |
+|  6 | LAW → Entra | LAW verifies the token’s authenticity with Entra                        |
+|  7 | Entra → LAW | Token is confirmed and validated                                        |
+|  8 | LAW → SI    | Query results (IIS logs, metrics, etc.) are returned to the SI Module   |
 
 ---
 
-### ✅ Security Best Practices
-
-* Ensure the SPN has **minimum RBAC**, ideally **Log Analytics Reader** on the workspace.
-* Use **Key Vault** to store App Secret securely if used in automated systems.
-* Use **Managed Identity** if MES is hosted in Azure and supports it (to eliminate secrets).
+Would you like this exported as a **PNG**, or want a **Terraform role assignment snippet** for the SPN used in this flow?
 
 ---
 
