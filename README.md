@@ -29,7 +29,7 @@ sequenceDiagram
     SI->>LAW: (5) Submit KQL query using access token
     LAW->>Entra: (6) Validate token with Entra ID
     Entra-->>LAW: (7) Confirm token is valid
-    LAW-->>SI: (8) Return query results (e.g., IIS logs)
+    LAW-->>SI: (8) Return query results 
 ```
 
 
