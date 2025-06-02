@@ -1,3 +1,93 @@
+Here is the **enhanced and detailed Mermaid sequence diagram** showing a **step-by-step breakdown** from:
+
+* **MES Modules** initiating log capture on
+* **Azure VM (IIS)** with
+* **Azure Monitor Agent** collecting logs as defined in
+* **Data Collection Rule (DCR)** and sending them to
+* **Log Analytics Workspace (LAW)**, followed by
+* **Export to MOVEit (SFTP)**, and finally to
+* **Azure Blob Storage** for archiving or further processing.
+
+Each step is **clearly numbered** and contains **fine-grained operations** to represent all major interactions in a production-quality logging/export pipeline.
+
+---
+
+### ✅ **Highly Detailed Mermaid Sequence Diagram (No Grouping)**
+
+```mermaid
+sequenceDiagram
+    participant MES as MES Module
+    participant VM as Azure VM (IIS)
+    participant AMA as Azure Monitor Agent
+    participant DCR as Data Collection Rule
+    participant LAW as Log Analytics Workspace
+    participant MOVEit as SFTP (MOVEit)
+    participant Storage as Azure Blob Storage
+
+    %% Step 1: MES initiates VM configuration
+    MES->>VM: (1) Enable IIS role and logging<br/>Set log path: C:\inetpub\logs\LogFiles
+    VM-->>MES: (2) Confirm IIS is logging
+
+    %% Step 2: Monitor Agent Setup
+    MES->>VM: (3) Install Azure Monitor Agent (AMA)
+    VM-->>MES: (4) Confirm AMA installed and running
+
+    %% Step 3: DCR Setup
+    MES->>DCR: (5) Create DCR for IIS logs<br/>Configure path and record delimiter
+    DCR-->>MES: (6) DCR deployed and ready
+
+    %% Step 4: Associate DCR to VM
+    MES->>DCR: (7) Associate VM to DCR
+    DCR-->>AMA: (8) Push collection config to AMA
+
+    %% Step 5: Log Detection and Collection
+    VM->>AMA: (9) IIS logs generated (u_ex*.log)
+    AMA->>DCR: (10) Match file pattern and rules
+    DCR-->>AMA: (11) Validate collection instructions
+    AMA->>LAW: (12) Forward logs to Log Analytics Workspace
+
+    %% Step 6: Export logs to MOVEit
+    LAW->>MOVEit: (13) Continuous export of custom logs to SFTP (CSV or JSON)
+    MOVEit-->>LAW: (14) Confirm delivery success
+
+    %% Step 7: Transfer to Blob Storage
+    MOVEit->>Storage: (15) Upload exported logs to Azure Blob Storage
+    Storage-->>MOVEit: (16) Confirm file upload completed
+
+    %% Step 8: Optional downstream trigger
+    Storage->>MES: (17) Notify MES of new files (event or polling)
+```
+
+---
+
+### 🔍 **Step-by-Step Explanation**
+
+|  # | Action           | Description                                                |
+| -: | ---------------- | ---------------------------------------------------------- |
+|  1 | MES → VM         | Enables IIS on the VM and configures log path              |
+|  2 | VM → MES         | Confirms IIS logging is enabled                            |
+|  3 | MES → VM         | Installs the Azure Monitor Agent (AMA)                     |
+|  4 | VM → MES         | Confirms AMA is running                                    |
+|  5 | MES → DCR        | Creates a DCR to collect IIS logs from the configured path |
+|  6 | DCR → MES        | Confirms the rule is created                               |
+|  7 | MES → DCR        | Associates the target VM to the DCR                        |
+|  8 | DCR → AMA        | Pushes collection rules to the Azure Monitor Agent         |
+|  9 | VM → AMA         | Logs are created and detected by AMA                       |
+| 10 | AMA → DCR        | AMA checks path and pattern                                |
+| 11 | DCR → AMA        | Confirms matched config                                    |
+| 12 | AMA → LAW        | Logs are sent to Log Analytics                             |
+| 13 | LAW → MOVEit     | Custom logs are exported to MOVEit via continuous export   |
+| 14 | MOVEit → LAW     | Acknowledges successful receipt                            |
+| 15 | MOVEit → Storage | MOVEit uploads files to Azure Blob Storage                 |
+| 16 | Storage → MOVEit | Confirms upload is successful                              |
+| 17 | Storage → MES    | (Optional) Notifies MES of file availability               |
+
+---
+
+Would you like this exported as a **downloadable PNG/SVG**, or do you want to **add Event Grid and automation triggers (e.g., Logic Apps)** to the final Storage step?
+
+
+
 Here's a **concise and direct Mermaid sequence diagram** based on your most recent instruction:
 
 > **MES Modules → Azure VM → Log Analytics Workspace → SFTP (MOVEit) → Azure Blob Storage**
