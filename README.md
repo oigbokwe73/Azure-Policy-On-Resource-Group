@@ -1,84 +1,106 @@
+Perfect — here’s the **final, updated Mermaid sequence diagram** with:
 
-Here is the **updated color-coded Mermaid sequence diagram** based on your earlier request — but now combining:
+✅ **Logical restructuring**:
 
-* ✅ The **original "Updated Color-Coded Mermaid Sequence Diagram with MES Module"**
-* 🔁 The **new logic where Step 1 is `MES → Azure Storage`** instead of `MES → VM`
-* 🔁 Includes downstream flow from **Log Analytics Workspace (LAW)** → **MOVEit (SFTP)** → **Azure Storage** → **SHD SI Modules**
-* 🎨 Maintains **color-coded logical separation**:
+* **SHD SI Modules**, **Azure Storage**, and **SFTP (MOVEit)** are now grouped under a **single category**:
+  🔵 **"Export & Analytics Layer"**
 
-  * 🟩 **Data Collection Layer**
-  * 🟦 **Identity & Monitoring Layer**
-  * 🟨 **Consumer Layer**
+✅ **Full step-by-step explanation** for every numbered flow in the diagram
+
+✅ Preserved color-coded **logical separation** for clarity
 
 ---
 
-### ✅ **Full Color-Coded Mermaid Sequence Diagram – Updated with Storage and Export Flow**
+### 🌐 **Final Updated Mermaid Sequence Diagram**
 
 ```mermaid
 sequenceDiagram
     %% === Consumer Layer (Yellow) ===
     box #fffde7:Consumer Layer
         participant MES as MES Module
-        participant SHD as SHD SI Modules
     end
 
-    %% === Azure Identity & Monitoring Services Layer (Blue) ===
+    %% === Azure Identity & Monitoring Layer (Blue) ===
     box #e3f2fd:Azure Identity & Monitoring Services
         participant Entra as Azure Entra ID
         participant LAW as Log Analytics Workspace
     end
 
-    %% === Data Pipeline & Collection Layer (Green) ===
-    box #e8f5e9:Data Pipeline & Collection Layer
-        participant Storage as Azure Storage
-        participant MOVEit as SFTP (MOVEit)
+    %% === Data Collection Layer (Green) ===
+    box #e8f5e9:Data Collection Layer
+        participant VM as Azure VM (IIS)
         participant AMA as Azure Monitor Agent
         participant DCR as Data Collection Rule
-        participant VM as Azure VM (IIS)
     end
 
-    %% Step 1: MES initiates from Azure Storage
-    MES->>Storage: (1) Access exported log files or metadata
-    Storage-->>MES: (2) Return file info or availability trigger
+    %% === Export & Analytics Layer (Gray-Blue) ===
+    box #e1f5fe:Export & Analytics Layer
+        participant MOVEit as SFTP (MOVEit)
+        participant Storage as Azure Storage
+        participant SHD as SHD SI Modules
+    end
 
-    %% Step 2: Configure logging on VM
-    MES->>VM: (3) Enable IIS logging<br/>Path: C:\inetpub\logs\LogFiles
-    VM->>AMA: (4) IIS log file detected
-    AMA->>DCR: (5) Read DCR configuration
-    DCR-->>AMA: (6) Return file pattern & path rules
-    AMA->>LAW: (7) Send log data to Log Analytics
+    %% Step 1: MES checks export data
+    MES->>Storage: (1) Access or poll for latest exported log files
+    Storage-->>MES: (2) Return file metadata or signal availability
 
-    %% Step 3: Authentication to Entra ID
+    %% Step 2: Configure IIS Logging
+    MES->>VM: (3) Enable IIS logging at path C:\inetpub\logs\LogFiles
+    VM->>AMA: (4) Detect new IIS log files (e.g., u_ex*.log)
+    AMA->>DCR: (5) Refer to DCR for path rules
+    DCR-->>AMA: (6) Return collection format and filters
+    AMA->>LAW: (7) Send IIS logs to Log Analytics Workspace
+
+    %% Step 3: Authentication with Entra
     MES->>Entra: (8) Request OAuth2 token using App ID/Secret
-    Entra-->>MES: (9) Return token
+    Entra-->>MES: (9) Issue access token
 
     %% Step 4: Query Log Analytics
     MES->>LAW: (10) Submit KQL query using token
     LAW->>Entra: (11) Validate token
     Entra-->>LAW: (12) Confirm token validity
-    LAW-->>MES: (13) Return queried log data
+    LAW-->>MES: (13) Return IIS log query results
 
-    %% Step 5: Continuous export
-    LAW->>MOVEit: (14) Export logs to SFTP server
-    MOVEit->>Storage: (15) Transfer files to Azure Storage
-    Storage->>SHD: (16) Notify SHD SI Modules of new data
+    %% Step 5: Export flow to external pipeline
+    LAW->>MOVEit: (14) Export logs continuously to MOVEit SFTP
+    MOVEit->>Storage: (15) Drop log files into Azure Blob Storage
+    Storage->>SHD: (16) Notify or trigger SHD SI Modules for ingestion
 ```
 
 ---
 
-### 📘 Layer Color Legend
+### 📘 Step-by-Step Diagram Explanation
 
-| Color        | Layer                            | Role                                                               |
-| ------------ | -------------------------------- | ------------------------------------------------------------------ |
-| 🟩 `#e8f5e9` | Data Pipeline & Collection Layer | Handles log creation, collection, and export                       |
-| 🟦 `#e3f2fd` | Identity & Monitoring Services   | Handles authentication and analytics                               |
-| 🟨 `#fffde7` | Consumer Layer                   | Executes queries, receives log data, or initiates downstream logic |
+|      # | Step             | Description                                                                         |
+| -----: | ---------------- | ----------------------------------------------------------------------------------- |
+|  **1** | MES → Storage    | MES Module checks Azure Storage for newly exported log files (or triggers analysis) |
+|  **2** | Storage → MES    | Returns metadata (e.g., file names, timestamps) or signals availability             |
+|  **3** | MES → VM         | Enables IIS logging on the Azure VM to begin log collection                         |
+|  **4** | VM → AMA         | Azure Monitor Agent detects the new log files (e.g., IIS W3C format)                |
+|  **5** | AMA → DCR        | AMA consults the Data Collection Rule for file path, filters                        |
+|  **6** | DCR → AMA        | DCR returns the collection rules (e.g., directory, pattern)                         |
+|  **7** | AMA → LAW        | Logs are sent to Log Analytics Workspace                                            |
+|  **8** | MES → Entra      | MES authenticates using OAuth2 to gain access to query LAW                          |
+|  **9** | Entra → MES      | Returns a valid access token                                                        |
+| **10** | MES → LAW        | MES submits a KQL query to fetch IIS logs                                           |
+| **11** | LAW → Entra      | LAW validates the token with Entra                                                  |
+| **12** | Entra → LAW      | Entra confirms token is valid                                                       |
+| **13** | LAW → MES        | KQL query results (IIS logs) are returned to MES                                    |
+| **14** | LAW → MOVEit     | Log Analytics continuously exports logs to the MOVEit SFTP server                   |
+| **15** | MOVEit → Storage | MOVEit drops files in Azure Storage (e.g., daily batches or real-time)              |
+| **16** | Storage → SHD    | Storage triggers or notifies SHD SI Modules for analysis/processing                 |
 
 ---
 
-Would you like a **PNG/SVG export**, or to expand this with **Azure Event Grid triggers**, **Logic Apps**, or **alert rules in SHD**?
+### 🔒 Additional Notes
+
+* Steps 14–16 represent an **automated export pipeline** to external systems.
+* SHD SI Modules could include **AI models**, **security analytics**, or **regulatory monitoring**.
+* You can optionally add **Event Grid** or **Logic Apps** between Storage and SHD for automation.
 
 ---
+
+Would you like this rendered as a **PNG image**, or paired with a **Terraform template** to configure the export pipeline and RBAC?
 
 ### 🟦 **Updated Mermaid Sequence Diagram – Unified Azure Group for Identity & Monitoring**
 
