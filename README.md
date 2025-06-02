@@ -1,3 +1,42 @@
+Here's a **concise and direct Mermaid sequence diagram** based on your most recent instruction:
+
+> **MES Modules → Azure VM → Log Analytics Workspace → SFTP (MOVEit) → Azure Blob Storage**
+
+This flow focuses on the core **log ingestion and export pipeline**, simplified and clean.
+
+---
+
+### ✅ **Mermaid Sequence Diagram – MES to Blob Storage via MOVEit**
+
+```mermaid
+sequenceDiagram
+    participant MES as MES Module
+    participant VM as Azure VM (IIS)
+    participant LAW as Log Analytics Workspace
+    participant MOVEit as SFTP (MOVEit)
+    participant Storage as Azure Blob Storage
+
+    MES->>VM: (1) Configure IIS logging
+    VM->>LAW: (2) Log data sent via Azure Monitor Agent
+    LAW->>MOVEit: (3) Export logs to SFTP server
+    MOVEit->>Storage: (4) Transfer files to Azure Blob Storage
+```
+
+---
+
+### 📘 Explanation of Steps
+
+|  # | Interaction            | Description                                                                 |
+| -: | ---------------------- | --------------------------------------------------------------------------- |
+|  1 | MES → VM               | MES Module configures IIS logging on the Azure VM                           |
+|  2 | VM → LAW               | Logs are collected by Azure Monitor Agent and sent to Log Analytics         |
+|  3 | LAW → MOVEit           | LAW exports the logs to MOVEit SFTP (via Export Rule / automation)          |
+|  4 | MOVEit → Azure Storage | MOVEit transfers the logs to Azure Blob Storage for archiving or processing |
+
+---
+
+Would you like this diagram to also show the **authentication steps** (e.g., via Azure Entra ID), or include **SHD SI Modules** for downstream analytics?
+
 Here is the **refined and extensive Mermaid sequence diagram** with **all groupings (categories/boxes) removed**—just the pure sequence flow across actors. All steps are preserved, and numbering remains for clarity.
 
 ---
