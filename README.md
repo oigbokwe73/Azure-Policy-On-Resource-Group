@@ -1,5 +1,82 @@
 
-Here’s your updated **Mermaid sequence diagram** with the **Azure Service Principal (SPN)**, **Azure Entra ID**, and **Log Analytics Workspace (LAW)** grouped under a single **Azure Identity & Monitoring Services** boundary.
+Here is the **updated color-coded Mermaid sequence diagram** based on your earlier request — but now combining:
+
+* ✅ The **original "Updated Color-Coded Mermaid Sequence Diagram with MES Module"**
+* 🔁 The **new logic where Step 1 is `MES → Azure Storage`** instead of `MES → VM`
+* 🔁 Includes downstream flow from **Log Analytics Workspace (LAW)** → **MOVEit (SFTP)** → **Azure Storage** → **SHD SI Modules**
+* 🎨 Maintains **color-coded logical separation**:
+
+  * 🟩 **Data Collection Layer**
+  * 🟦 **Identity & Monitoring Layer**
+  * 🟨 **Consumer Layer**
+
+---
+
+### ✅ **Full Color-Coded Mermaid Sequence Diagram – Updated with Storage and Export Flow**
+
+```mermaid
+sequenceDiagram
+    %% === Consumer Layer (Yellow) ===
+    box #fffde7:Consumer Layer
+        participant MES as MES Module
+        participant SHD as SHD SI Modules
+    end
+
+    %% === Azure Identity & Monitoring Services Layer (Blue) ===
+    box #e3f2fd:Azure Identity & Monitoring Services
+        participant Entra as Azure Entra ID
+        participant LAW as Log Analytics Workspace
+    end
+
+    %% === Data Pipeline & Collection Layer (Green) ===
+    box #e8f5e9:Data Pipeline & Collection Layer
+        participant Storage as Azure Storage
+        participant MOVEit as SFTP (MOVEit)
+        participant AMA as Azure Monitor Agent
+        participant DCR as Data Collection Rule
+        participant VM as Azure VM (IIS)
+    end
+
+    %% Step 1: MES initiates from Azure Storage
+    MES->>Storage: (1) Access exported log files or metadata
+    Storage-->>MES: (2) Return file info or availability trigger
+
+    %% Step 2: Configure logging on VM
+    MES->>VM: (3) Enable IIS logging<br/>Path: C:\inetpub\logs\LogFiles
+    VM->>AMA: (4) IIS log file detected
+    AMA->>DCR: (5) Read DCR configuration
+    DCR-->>AMA: (6) Return file pattern & path rules
+    AMA->>LAW: (7) Send log data to Log Analytics
+
+    %% Step 3: Authentication to Entra ID
+    MES->>Entra: (8) Request OAuth2 token using App ID/Secret
+    Entra-->>MES: (9) Return token
+
+    %% Step 4: Query Log Analytics
+    MES->>LAW: (10) Submit KQL query using token
+    LAW->>Entra: (11) Validate token
+    Entra-->>LAW: (12) Confirm token validity
+    LAW-->>MES: (13) Return queried log data
+
+    %% Step 5: Continuous export
+    LAW->>MOVEit: (14) Export logs to SFTP server
+    MOVEit->>Storage: (15) Transfer files to Azure Storage
+    Storage->>SHD: (16) Notify SHD SI Modules of new data
+```
+
+---
+
+### 📘 Layer Color Legend
+
+| Color        | Layer                            | Role                                                               |
+| ------------ | -------------------------------- | ------------------------------------------------------------------ |
+| 🟩 `#e8f5e9` | Data Pipeline & Collection Layer | Handles log creation, collection, and export                       |
+| 🟦 `#e3f2fd` | Identity & Monitoring Services   | Handles authentication and analytics                               |
+| 🟨 `#fffde7` | Consumer Layer                   | Executes queries, receives log data, or initiates downstream logic |
+
+---
+
+Would you like a **PNG/SVG export**, or to expand this with **Azure Event Grid triggers**, **Logic Apps**, or **alert rules in SHD**?
 
 ---
 
