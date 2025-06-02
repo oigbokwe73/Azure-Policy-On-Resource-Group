@@ -1,3 +1,84 @@
+Here's the **enhanced and detailed Mermaid sequence diagram** that expands every step and interaction across your entire pipeline—from **MES Module initiating the process** to **SI Modules Dashboard** receiving and visualizing logs.
+
+It includes:
+
+* Detailed transitions
+* Sequential steps
+* All services involved: **Azure VM**, **Monitor Agent**, **DCR**, **LAW**, **MOVEit**, **Azure Blob Storage**, **SI Dashboard**
+
+---
+
+### ✅ **Expanded Mermaid Sequence Diagram – MES to SI Dashboard via Log Analytics Pipeline**
+
+```mermaid
+sequenceDiagram
+    participant MES as MES Module
+    participant VM as Azure VM (IIS)
+    participant AMA as Azure Monitor Agent
+    participant DCR as Data Collection Rule
+    participant LAW as Log Analytics Workspace
+    participant MOVEit as SFTP (MOVEit)
+    participant Storage as Azure Blob Storage
+    participant SIDash as SI Modules Dashboard
+
+    %% Step 1: Initiation
+    MES->>VM: (1) Connect via RDP / API to configure IIS
+    MES->>VM: (2) Enable IIS Logging at C:\inetpub\logs\LogFiles
+    VM-->>MES: (3) IIS Logging confirmed active
+
+    %% Step 2: Log Generation
+    Note over VM: IIS logs (u_ex*.log) created during traffic
+
+    %% Step 3: Collection Agent picks up logs
+    VM->>AMA: (4) New log files detected in IIS log path
+    AMA->>DCR: (5) Request Data Collection configuration
+    DCR-->>AMA: (6) Return rules: file path, pattern, record format
+
+    %% Step 4: Ingestion to Azure Monitor
+    AMA->>LAW: (7) Forward structured log data to Log Analytics
+
+    %% Step 5: Authentication and Query
+    MES->>LAW: (8) Submit KQL query to validate ingestion
+    LAW-->>MES: (9) Return KQL results (IIS log preview)
+
+    %% Step 6: Continuous Export (optional or configured)
+    LAW->>MOVEit: (10) Export logs to secure SFTP endpoint (MOVEit)
+    MOVEit->>Storage: (11) Transfer logs to Azure Blob Storage
+
+    %% Step 7: Storage-based event trigger
+    Storage->>SIDash: (12) Notify SI Modules Dashboard of new file
+    SIDash->>Storage: (13) Read/parses new log files
+    SIDash-->>SIDash: (14) Transform, visualize, alert on logs
+```
+
+---
+
+### 🔍 Breakdown of New & Expanded Steps
+
+|     # | Description                                                                            |
+| ----: | -------------------------------------------------------------------------------------- |
+|   1–3 | MES configures IIS logging via remote connection or script                             |
+|     4 | Logs are generated automatically by IIS on VM traffic                                  |
+|   5–6 | AMA detects new logs and verifies DCR settings (path, pattern, delimiter)              |
+|     7 | Logs are structured and forwarded to LAW                                               |
+|   8–9 | MES optionally queries LAW to ensure logs are arriving (via KQL)                       |
+| 10–11 | LAW exports logs via MOVEit to secure storage (e.g., CSV or JSON)                      |
+|    12 | Azure Blob Storage triggers an event (e.g., via Event Grid) notifying SI Dashboard     |
+| 13–14 | SI Dashboard picks up new logs, transforms, and visualizes them (charts, alerts, KPIs) |
+
+---
+
+### 🧩 What's Next?
+
+Would you like:
+
+* This as a **PNG/SVG image**?
+* An extended version including **Azure Event Grid**, **Logic Apps**, or **SIEM (e.g., Azure Sentinel)**?
+* Sample **Terraform or Bicep templates** for LAW, DCR, and Blob trigger setup?
+
+Let me know how you'd like to proceed.
+
+
 Here is the **enhanced and detailed Mermaid sequence diagram** showing a **step-by-step breakdown** from:
 
 * **MES Modules** initiating log capture on
