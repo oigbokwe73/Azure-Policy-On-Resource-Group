@@ -43,7 +43,7 @@ sequenceDiagram
 
     %% Step 6: Export logs via pipeline
     LAW->>SFTP: (9) Continuous export rule triggered
-    SFTP->>Storage: (10) MOVEit pushes files to Azure Blob Storage
+    SFTP->>Storage: (10) SFTP Server pushes files to Azure Blob Storage
 
     %% Step 7: Storage readiness signal
     Storage->>SI: (11) Trigger SI ingestion or notify of new logs
