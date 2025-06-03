@@ -19,7 +19,7 @@ sequenceDiagram
     participant AMA as Azure Monitor Agent
     participant DCR as Data Collection Rule
     participant LAW as Log Analytics Workspace
-    participant MOVEit as SFTP (MOVEit)
+    participant SFTP as SFTP 
     participant Storage as Azure Blob Storage
     participant SI as SI Modules Dashboard
 
@@ -42,7 +42,7 @@ sequenceDiagram
     LAW-->>MES: (8) Return log query results
 
     %% Step 6: Export logs via pipeline
-    LAW->>MOVEit: (9) Continuous export rule triggered
+    LAW->>SFTP: (9) Continuous export rule triggered
     MOVEit->>Storage: (10) MOVEit pushes files to Azure Blob Storage
 
     %% Step 7: Storage readiness signal
@@ -67,11 +67,11 @@ sequenceDiagram
 | **6**  | AMA → LAW        | Logs are parsed and streamed securely into the Log Analytics Workspace.                                    |
 | **7**  | MES → LAW        | MES queries the workspace using KQL for metrics such as total requests, error counts, latency, etc.        |
 | **8**  | LAW → MES        | The results of those queries are returned to MES (or a BI/monitoring frontend).                            |
-| **9**  | LAW → MOVEit     | A Data Export rule from LAW triggers a delivery to MOVEit SFTP server.                                     |
-| **10** | MOVEit → Storage | MOVEit receives the exported log files and uploads them into Azure Blob Storage.                           |
+| **9**  | LAW → SFTP     | A Data Export rule from LAW triggers a delivery to MOVEit SFTP server.                                     |
+| **10** | SFTP → Storage  | SFTP server receives the exported log files and uploads them into Azure Blob Storage.                           |
 | **11** | Storage → SI     | Storage sends an event (via Event Grid, webhook, etc.) to the SI Module indicating new logs are available. |
 | **12** | SI → Storage     | The SI Module downloads the log files and/or metadata.                                                     |
-| **13** | SI internal      | The SI Module parses the log content, aggregates KPIs, and renders visualizations or dashboards.           |
+| **13** | SI Module (SHD)       | The SI Module parses the log content, aggregates KPIs, and renders visualizations or dashboards.           |
 
 ---
 
