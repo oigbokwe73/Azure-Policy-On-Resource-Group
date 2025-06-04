@@ -1,3 +1,44 @@
+To **convert JSON to CSV using PowerShell**, you can use the `ConvertFrom-Json` cmdlet followed by `Export-Csv`.
+
+---
+
+### ✅ **Example 1: Convert JSON File to CSV**
+
+```powershell
+# Path to your JSON file
+$jsonPath = "C:\Temp\data.json"
+$csvPath = "C:\Temp\data.csv"
+
+# Read and convert to CSV
+Get-Content $jsonPath | ConvertFrom-Json | Export-Csv -Path $csvPath -NoTypeInformation
+
+Write-Output "CSV exported to $csvPath"
+```
+
+---
+
+### ✅ **Example 2: Convert JSON String to CSV**
+
+```powershell
+# JSON string example
+$json = '[
+  {"name": "Alice", "age": 30, "location": "NY"},
+  {"name": "Bob", "age": 25, "location": "CA"}
+]'
+
+# Convert and export to CSV
+$json | ConvertFrom-Json | Export-Csv -Path "C:\Temp\output.csv" -NoTypeInformation
+```
+
+---
+
+### 🛠️ **Important Notes**
+
+* The JSON must be an array of objects (e.g., `[{...}, {...}]`).
+* If your JSON is nested (has arrays or objects inside), you may need to **flatten** it using custom logic before exporting.
+
+Would you like an example that handles **nested JSON** or arrays inside properties?
+
 Here's a PowerShell script that queries an **Azure Log Analytics Workspace** using Kusto Query Language (KQL) and exports the results to a CSV file.
 
 ---
