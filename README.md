@@ -1,3 +1,42 @@
+To query data **between the start and end of the previous month** using **Kusto Query Language (KQL)** in Azure Log Analytics, you can use the `startofmonth()` and `endofmonth()` functions with `datetime_add()`.
+
+---
+
+### ✅ **Kusto Query: Previous Month Range**
+
+```kusto
+let startTime = startofmonth(datetime_add("month", -1, now()));
+let endTime = endofmonth(datetime_add("month", -1, now()));
+YourTableName
+| where TimeGenerated between (startTime .. endTime)
+```
+
+---
+
+### 🔍 **Explanation**
+
+| Variable    | Description                                    |
+| ----------- | ---------------------------------------------- |
+| `startTime` | First day of the previous month at 00:00       |
+| `endTime`   | Last day of the previous month at 23:59:59.999 |
+
+---
+
+### 🧪 **Example with `Heartbeat` Table**
+
+```kusto
+let startTime = startofmonth(datetime_add("month", -1, now()));
+let endTime = endofmonth(datetime_add("month", -1, now()));
+Heartbeat
+| where TimeGenerated between (startTime .. endTime)
+| summarize Count = count() by Computer, bin(TimeGenerated, 1d)
+| order by TimeGenerated asc
+```
+
+---
+
+Would you like to **filter by a specific column** (e.g., `Computer`, `Category`, etc.) or visualize this in a chart format like time series?
+
 To **convert JSON to CSV using PowerShell**, you can use the `ConvertFrom-Json` cmdlet followed by `Export-Csv`.
 
 ---
