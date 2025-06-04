@@ -1,3 +1,65 @@
+Here's a PowerShell script that queries an **Azure Log Analytics Workspace** using Kusto Query Language (KQL) and exports the results to a CSV file.
+
+---
+
+### ✅ **Prerequisites**
+
+1. **Azure PowerShell Module** (`Az`): Install if needed using:
+
+   ```powershell
+   Install-Module -Name Az -AllowClobber -Scope CurrentUser
+   ```
+2. **Log Analytics Query Module**:
+
+   ```powershell
+   Install-Module -Name Az.OperationalInsights -Scope CurrentUser
+   ```
+
+---
+
+### 💡 **PowerShell Script: Read Log Analytics and Export to CSV**
+
+```powershell
+# Set parameters
+$subscriptionId = "<your-subscription-id>"
+$resourceGroupName = "<your-resource-group-name>"
+$workspaceName = "<your-log-analytics-workspace-name>"
+$csvOutputPath = "C:\Temp\LogAnalyticsExport.csv"
+$kustoQuery = @"
+Heartbeat
+| where TimeGenerated > ago(1d)
+| project TimeGenerated, Computer, OSType, Category, _ResourceId
+"@
+
+# Login and set context
+Connect-AzAccount
+Set-AzContext -SubscriptionId $subscriptionId
+
+# Get Workspace ID
+$workspace = Get-AzOperationalInsightsWorkspace -ResourceGroupName $resourceGroupName -Name $workspaceName
+
+# Query the Log Analytics workspace
+$results = Search-AzGraph -Query $kustoQuery `
+    -WorkspaceId $workspace.CustomerId
+
+# Convert to CSV and write to file
+$results | Export-Csv -Path $csvOutputPath -NoTypeInformation
+
+Write-Output "Export complete: $csvOutputPath"
+```
+
+---
+
+### 🛠️ **Notes**
+
+* Update `TimeGenerated > ago(1d)` to change the time range.
+* Replace the sample `Heartbeat` query with your own KQL.
+* The workspace’s `CustomerId` is used to execute the query.
+* You can customize the output path (`$csvOutputPath`) as needed.
+
+---
+
+Would you like to include authentication via Service Principal or Managed Identity instead of `Connect-AzAccount`?
 
 
 Here's a PowerShell script that reads records from an **Azure Log Analytics Workspace** using a **Kusto Query**, and writes the results to a **tab-delimited CSV file**:
