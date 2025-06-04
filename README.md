@@ -1,3 +1,96 @@
+
+
+Here's a PowerShell script that reads records from an **Azure Log Analytics Workspace** using a **Kusto Query**, and writes the results to a **tab-delimited CSV file**:
+
+---
+
+### ✅ Requirements
+
+* Azure PowerShell module (`Az` module)
+* Logged in to Azure (`Connect-AzAccount`)
+* Workspace ID and Kusto Query
+* Log Analytics API permissions (Reader role on the workspace)
+
+---
+
+### 📜 PowerShell Script
+
+```powershell
+# Variables
+$SubscriptionId = "<your-subscription-id>"
+$ResourceGroupName = "<your-resource-group-name>"
+$WorkspaceName = "<your-log-analytics-workspace-name>"
+$Query = @"
+Heartbeat
+| where TimeGenerated > ago(1h)
+| project TimeGenerated, Computer, Category, _ResourceId
+"@
+
+$OutputCsv = "C:\temp\LogAnalyticsExport.tsv"  # Output file path
+
+# Login to Azure if not already
+Connect-AzAccount
+
+# Set context
+Set-AzContext -SubscriptionId $SubscriptionId
+
+# Get the workspace
+$workspace = Get-AzOperationalInsightsWorkspace -ResourceGroupName $ResourceGroupName -Name $WorkspaceName
+
+# Execute the query
+$results = Search-AzGraph -Query `
+@"
+resources
+| where type == 'microsoft.operationalinsights/workspaces' 
+| where name == '$($workspace.Name)' 
+| extend customerId = properties.customerId 
+"@ 
+
+$CustomerId = $results[0].customerId
+
+# Run query via REST API
+$Token = (Get-AzAccessToken -ResourceUrl "https://api.loganalytics.io").Token
+$Headers = @{
+    "Authorization" = "Bearer $Token"
+    "Content-Type"  = "application/json"
+}
+
+$Body = @{
+    "query" = $Query
+} | ConvertTo-Json -Depth 10
+
+$Uri = "https://api.loganalytics.io/v1/workspaces/$CustomerId/query"
+
+$response = Invoke-RestMethod -Method Post -Uri $Uri -Headers $Headers -Body $Body
+
+# Convert and export to TSV
+if ($response.tables.rows.Count -gt 0) {
+    $columns = $response.tables.columns.name
+    $records = $response.tables.rows | ForEach-Object {
+        $obj = [PSCustomObject]@{}
+        for ($i = 0; $i -lt $columns.Count; $i++) {
+            $obj | Add-Member -NotePropertyName $columns[$i] -NotePropertyValue $_[$i]
+        }
+        $obj
+    }
+
+    $records | Export-Csv -Path $OutputCsv -Delimiter "`t" -NoTypeInformation
+    Write-Host "Exported to $OutputCsv"
+} else {
+    Write-Host "No records found for the query."
+}
+```
+
+---
+
+### 📝 Notes
+
+* Replace placeholders like `<your-subscription-id>` and `<your-resource-group-name>` with actual values.
+* Ensure the file path exists or change `$OutputCsv` accordingly.
+* Query can be changed depending on your Log Analytics data (e.g., `Heartbeat`, `AzureDiagnostics`, `Perf`).
+
+Would you like me to generate a specific query (e.g., for performance metrics, logs, or application data)?
+
 Absolutely! Below is the **enhanced Mermaid sequence diagram** that includes **detailed steps** and flow from **MES Modules all the way to SI Dashboard**, capturing:
 
 * IIS log configuration on VM
