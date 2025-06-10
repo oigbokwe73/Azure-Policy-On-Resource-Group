@@ -1,3 +1,93 @@
+
+Here’s the **updated summary** including the **creation of a new Azure subscription**, its **addition to the management group**, and the **migration of resource groups**:
+
+---
+
+### ✅ **End-to-End Summary: Create Management Group, Subscription, and Move Resources**
+
+#### 🔹 1. **Create Management Group**
+
+Create a new management group (e.g., for DEV workloads):
+
+```bash
+az account management-group create \
+  --name "Dev-MG" \
+  --display-name "Development Management Group"
+```
+
+---
+
+#### 🔹 2. **Create a New Azure Subscription**
+
+If you have access via an Enterprise Agreement (EA), Microsoft Partner portal, or billing account:
+
+```bash
+az account subscription create \
+  --offer-type "MS-AZR-0017P" \
+  --display-name "Dev-Subscription" \
+  --billing-scope "/providers/Microsoft.Billing/billingAccounts/{billingAccountId}" 
+```
+
+> ⚠️ **Note**: `az account subscription create` works only for Microsoft internal or delegated service principals. Most users must create subscriptions via the **Azure Portal** or **EA/partner portal**.
+
+📌 **Alternative**:
+
+* Go to Azure Portal → Subscriptions → **+ Add** → Choose billing account and create a **new subscription**.
+
+---
+
+#### 🔹 3. **Move New Subscription to Management Group**
+
+Once created, move the subscription to the new MG:
+
+```bash
+az account management-group subscription add \
+  --name "Dev-MG" \
+  --subscription "<New-Subscription-ID>"
+```
+
+---
+
+#### 🔹 4. **Move Resource Groups into New Subscription**
+
+Move existing resource groups from the old subscription to the new DEV subscription:
+
+```bash
+az resource move \
+  --destination-group "<Target-RG>" \
+  --destination-subscription-id "<New-Subscription-ID>" \
+  --ids $(az resource list --resource-group "<Source-RG>" --query "[].id" -o tsv)
+```
+
+---
+
+#### 🔹 5. **Reapply RBAC and Policies (Post-Move)**
+
+* Reassign roles using:
+
+  ```bash
+  az role assignment create --assignee "<user>" --role "Contributor" --scope "/subscriptions/<id>/resourceGroups/<RG>"
+  ```
+
+* Apply policies at the management group level:
+
+  ```bash
+  az policy assignment create --name "Enforce-Tag" --policy "<policyDefId>" --scope "/providers/Microsoft.Management/managementGroups/Dev-MG"
+  ```
+
+---
+
+### ✅ Final Workflow Overview:
+
+1. Create `Dev-MG` management group.
+2. Create a new Azure subscription (via portal or API).
+3. Attach the subscription to `Dev-MG`.
+4. Move selected resource groups to the new subscription.
+5. Reassign RBAC and Azure policies.
+
+Let me know if you'd like a **Terraform**, **Bicep**, or **Mermaid diagram** for this flow.
+
+
 ### ✅ **Summary: Creating a Management Group and Moving Resources**
 
 1. **Plan and Prepare**
