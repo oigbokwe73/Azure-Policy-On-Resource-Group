@@ -1,3 +1,23 @@
+Here’s the updated Azure CLI command to **extract the group ID** directly from the group name:
+
+```bash
+GROUP_NAME="MySecurityGroup"
+GROUP_ID=$(az ad group show --group "$GROUP_NAME" --query "id" -o tsv)
+echo "Group ID for '$GROUP_NAME' is: $GROUP_ID"
+```
+
+### Explanation:
+
+* `GROUP_NAME` is the variable holding your group name.
+* `az ad group show` retrieves the group object.
+* `--query "id"` extracts only the group ID.
+* `-o tsv` formats the output as plain text (no quotes).
+* `GROUP_ID` stores the result.
+
+Let me know if you'd like to loop through a list of group names or export the results to a CSV.
+
+
+
 To query data **between the start and end of the previous month** using **Kusto Query Language (KQL)** in Azure Log Analytics, you can use the `startofmonth()` and `endofmonth()` functions with `datetime_add()`.
 
 ---
