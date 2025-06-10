@@ -1,3 +1,42 @@
+### ✅ **Summary: Creating a Management Group and Moving Resources**
+
+1. **Plan and Prepare**
+
+   * Confirm permissions and subscription/resource move eligibility.
+   * Define your hierarchy (e.g., Root > Dev-MG > Subscriptions).
+
+2. **Create Management Group**
+
+   * Use Azure CLI or Portal:
+
+     ```bash
+     az account management-group create --name "Dev-MG" --display-name "Development Management Group"
+     ```
+
+3. **Move Subscription to Management Group**
+
+   * Link DEV subscription to the new MG:
+
+     ```bash
+     az account management-group subscription add --name "Dev-MG" --subscription "<Subscription-ID>"
+     ```
+
+4. **Move Resource Groups**
+
+   * Use Azure Portal or CLI to move RGs to the DEV subscription:
+
+     ```bash
+     az resource move --destination-group "<NewRG>" --destination-subscription-id "<SubID>" --ids <resource-ids>
+     ```
+
+5. **Apply Governance**
+
+   * Reassign RBAC roles and Azure Policies to the new MG/subscription if needed.
+
+Let me know if you want this automated via **Bicep**, **Terraform**, or a **Mermaid diagram**.
+
+
+
 Here’s the updated Azure CLI command to **extract the group ID** directly from the group name:
 
 ```bash
