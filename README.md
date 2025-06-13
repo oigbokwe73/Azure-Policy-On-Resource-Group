@@ -2,6 +2,176 @@
 Here’s the **updated summary** including the **creation of a new Azure subscription**, its **addition to the management group**, and the **migration of resource groups**:
 
 ---
+Below is a custom Azure Policy that targets PostgreSQL Flexible Server diagnostic logs, with individual parameters for each log category. Each parameter defaults to false, and can be toggled during policy assignment.
+
+
+---
+
+✅ Azure Policy: PostgreSQL Server Diagnostic Logs with Individual Controls
+
+{
+  "properties": {
+    "displayName": "Configure PostgreSQL to enable diagnostic logs (granular)",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "description": "This policy configures PostgreSQL Flexible Server diagnostic settings with parameters to enable each log category individually.",
+    "parameters": {
+      "enablePostgreSQLLogs": {
+        "type": "Boolean",
+        "defaultValue": false,
+        "metadata": {
+          "displayName": "Enable PostgreSQL Logs",
+          "description": "Logs general query and connection activity."
+        }
+      },
+      "enableQueryStoreRuntimeStatistics": {
+        "type": "Boolean",
+        "defaultValue": false,
+        "metadata": {
+          "displayName": "Enable Query Store Runtime Statistics",
+          "description": "Captures runtime statistics from query store."
+        }
+      },
+      "enableQueryStoreWaitStatistics": {
+        "type": "Boolean",
+        "defaultValue": false,
+        "metadata": {
+          "displayName": "Enable Query Store Wait Statistics",
+          "description": "Captures wait stats from query store."
+        }
+      },
+      "logAnalytics": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Log Analytics Workspace Resource ID",
+          "description": "Specify the resource ID of the Log Analytics workspace."
+        }
+      }
+    },
+    "policyRule": {
+      "if": {
+        "field": "type",
+        "equals": "Microsoft.DBforPostgreSQL/flexibleServers"
+      },
+      "then": {
+        "effect": "deployIfNotExists",
+        "details": {
+          "type": "Microsoft.Insights/diagnosticSettings",
+          "roleDefinitionIds": [
+            "/providers/microsoft.authorization/roleDefinitions/749f88d5-cbae-40b8-bcfc-e573ddc772fa"
+          ],
+          "deployment": {
+            "properties": {
+              "mode": "incremental",
+              "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "parameters": {
+                  "serverName": {
+                    "type": "string"
+                  },
+                  "workspaceId": {
+                    "type": "string"
+                  },
+                  "enablePostgreSQLLogs": {
+                    "type": "bool"
+                  },
+                  "enableQueryStoreRuntimeStatistics": {
+                    "type": "bool"
+                  },
+                  "enableQueryStoreWaitStatistics": {
+                    "type": "bool"
+                  }
+                },
+                "resources": [
+                  {
+                    "type": "Microsoft.Insights/diagnosticSettings",
+                    "apiVersion": "2021-05-01-preview",
+                    "name": "[concat('pgsql-diag-', parameters('serverName'))]",
+                    "properties": {
+                      "targetResourceId": "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', parameters('serverName'))]",
+                      "workspaceId": "[parameters('workspaceId')]",
+                      "logs": [
+                        {
+                          "category": "PostgreSQLLogs",
+                          "enabled": "[parameters('enablePostgreSQLLogs')]",
+                          "retentionPolicy": {
+                            "enabled": false,
+                            "days": 0
+                          }
+                        },
+                        {
+                          "category": "QueryStoreRuntimeStatistics",
+                          "enabled": "[parameters('enableQueryStoreRuntimeStatistics')]",
+                          "retentionPolicy": {
+                            "enabled": false,
+                            "days": 0
+                          }
+                        },
+                        {
+                          "category": "QueryStoreWaitStatistics",
+                          "enabled": "[parameters('enableQueryStoreWaitStatistics')]",
+                          "retentionPolicy": {
+                            "enabled": false,
+                            "days": 0
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "parameters": {
+                "serverName": {
+                  "value": "[field('name')]"
+                },
+                "workspaceId": {
+                  "value": "[parameters('logAnalytics')]"
+                },
+                "enablePostgreSQLLogs": {
+                  "value": "[parameters('enablePostgreSQLLogs')]"
+                },
+                "enableQueryStoreRuntimeStatistics": {
+                  "value": "[parameters('enableQueryStoreRuntimeStatistics')]"
+                },
+                "enableQueryStoreWaitStatistics": {
+                  "value": "[parameters('enableQueryStoreWaitStatistics')]"
+                }
+              }
+            }
+          },
+          "existenceCondition": {
+            "allOf": [
+              {
+                "field": "Microsoft.Insights/diagnosticSettings/logs[*].category",
+                "contains": "PostgreSQLLogs"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+
+
+---
+
+📌 Diagnostic Log Categories for Azure PostgreSQL Flexible Server:
+
+Category	Purpose
+
+PostgreSQLLogs	Captures session, connections, queries
+QueryStoreRuntimeStatistics	Query-level performance stats
+QueryStoreWaitStatistics	Wait and blocking data
+
+
+
+---
+
+Would you like a Policy Initiative bundling this with SQL and CosmosDB policies, or a Terraform version for deployment?
+
+
 
 ### ✅ **End-to-End Summary: Create Management Group, Subscription, and Move Resources**
 
