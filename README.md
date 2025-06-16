@@ -1,3 +1,80 @@
+Here’s how you can **create a diagnostic setting for a Management Group** using the **Azure REST API from PowerShell**.
+
+---
+
+## ✅ **PowerShell Script to Enable Activity Logs for a Management Group**
+
+### 🧾 Replace the placeholders before running:
+
+* `$managementGroupId`
+* `$diagnosticSettingName`
+* `$workspaceResourceId`
+
+---
+
+### 🔧 **PowerShell Script**
+
+```powershell
+# Variables
+$managementGroupId = "<your-management-group-id>"               # e.g., "contoso-mg"
+$diagnosticSettingName = "MG-ActivityLog-LogAnalytics"
+$workspaceResourceId = "/subscriptions/<sub-id>/resourceGroups/<rg-name>/providers/Microsoft.OperationalInsights/workspaces/<workspace-name>"
+
+# Get access token
+$accessToken = (az account get-access-token --resource https://management.azure.com --query accessToken -o tsv)
+
+# Build URL
+$url = "https://management.azure.com/providers/Microsoft.Management/managementGroups/$managementGroupId/providers/microsoft.insights/diagnosticSettings/$diagnosticSettingName?api-version=2021-05-01-preview"
+
+# Request body
+$body = @{
+  properties = @{
+    workspaceId = $workspaceResourceId
+    logs = @(
+      @{
+        category = "Administrative"
+        enabled = $true
+        retentionPolicy = @{ enabled = $false; days = 0 }
+      },
+      @{
+        category = "Policy"
+        enabled = $true
+        retentionPolicy = @{ enabled = $false; days = 0 }
+      },
+      @{
+        category = "Security"
+        enabled = $true
+        retentionPolicy = @{ enabled = $false; days = 0 }
+      }
+    )
+  }
+} | ConvertTo-Json -Depth 5
+
+# Make REST call
+$response = Invoke-RestMethod -Uri $url `
+                              -Method PUT `
+                              -Headers @{ Authorization = "Bearer $accessToken" } `
+                              -ContentType "application/json" `
+                              -Body $body
+
+# Output result
+$response | ConvertTo-Json -Depth 10
+```
+
+---
+
+### 📌 Notes:
+
+* Ensure you’re **logged in via `az login`** before running.
+* Required roles:
+
+  * **Monitoring Contributor** on the Management Group
+  * **Contributor** on the Log Analytics Workspace
+
+---
+
+Would you like a version using **Azure AD App/Service Principal** auth or to include **retry/error handling**?
+
 To get the **Log Analytics Workspace Resource ID** using Azure CLI, use the following command:
 
 ```bash
