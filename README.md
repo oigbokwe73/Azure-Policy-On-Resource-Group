@@ -1,4 +1,113 @@
 
+
+To **write Azure Activity Logs from a Tenant (or Management Group level)** to a **Log Analytics Workspace**, you can configure a **Diagnostic Setting** at the **Management Group level** to send logs to a Log Analytics Workspace.
+
+Here’s a complete guide:
+
+---
+
+## ✅ **Step-by-Step: Send Azure Activity Logs to Log Analytics from Management Group**
+
+### **1. Prerequisites**
+
+* **Owner/Contributor role** on the **Management Group**
+* A **Log Analytics Workspace**
+* Registered **Microsoft.Insights** resource provider
+* **Azure CLI** or **Azure PowerShell**, or use **Azure Portal**
+
+---
+
+### **2. Option A: Use Azure Portal**
+
+1. Go to **Management Groups** in Azure Portal.
+2. Select your desired **Management Group**.
+3. Under **Monitoring**, click **Diagnostic Settings**.
+4. Click **+ Add diagnostic setting**.
+5. Provide a name like `MG-ActivityLog-LogAnalytics`.
+6. Select the **categories** you want:
+
+   * `Administrative`
+   * `Policy`
+   * `Security`
+   * `Alert`
+   * `Recommendation`
+7. Check **Send to Log Analytics Workspace**.
+8. Select the **Subscription** and **Log Analytics Workspace**.
+9. Click **Save**.
+
+---
+
+### **3. Option B: Azure CLI Script**
+
+```bash
+# Variables
+MG_ID="YourManagementGroupID"
+DIAG_NAME="MG-ActivityLog-LogAnalytics"
+LAW_ID="/subscriptions/<sub-id>/resourceGroups/<rg-name>/providers/Microsoft.OperationalInsights/workspaces/<workspace-name>"
+
+# Enable Diagnostic Settings
+az monitor diagnostic-settings create \
+  --name $DIAG_NAME \
+  --resource "/providers/Microsoft.Management/managementGroups/$MG_ID" \
+  --resource-type "Microsoft.Management/managementGroups" \
+  --logs '[{"category": "Administrative", "enabled": true}, {"category": "Policy", "enabled": true}, {"category": "Security", "enabled": true}]' \
+  --workspace $LAW_ID
+```
+
+---
+
+### **4. Option C: Terraform Snippet**
+
+```hcl
+resource "azurerm_monitor_diagnostic_setting" "mg_activity_log" {
+  name               = "MG-ActivityLog-LogAnalytics"
+  target_resource_id = "/providers/Microsoft.Management/managementGroups/${var.management_group_id}"
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.log.id
+
+  log {
+    category = "Administrative"
+    enabled  = true
+  }
+
+  log {
+    category = "Policy"
+    enabled  = true
+  }
+
+  log {
+    category = "Security"
+    enabled  = true
+  }
+}
+```
+
+---
+
+### **5. Validation**
+
+Once configured, query the **Log Analytics Workspace** with:
+
+```kusto
+AzureActivity
+| where ResourceGroup == "<management_group_level_activity>"
+| sort by TimeGenerated desc
+```
+
+---
+
+## 🔐 Note on Permissions
+
+Ensure your identity has:
+
+* `Monitoring Contributor` role on the Management Group
+* `Log Analytics Contributor` on the workspace or resource group
+
+---
+
+Let me know if you’d like a **Mermaid diagram** or ARM/Bicep version of this!
+
+
+
 Here’s the **updated summary** including the **creation of a new Azure subscription**, its **addition to the management group**, and the **migration of resource groups**:
 
 ---
