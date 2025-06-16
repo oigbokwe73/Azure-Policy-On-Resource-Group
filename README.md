@@ -1,3 +1,37 @@
+To get the **Log Analytics Workspace Resource ID** using Azure CLI, use the following command:
+
+```bash
+az monitor log-analytics workspace show \
+  --resource-group <your-resource-group> \
+  --workspace-name <your-workspace-name> \
+  --query id \
+  --output tsv
+```
+
+### 🔁 Replace:
+
+* `<your-resource-group>` with your resource group's name
+* `<your-workspace-name>` with your Log Analytics Workspace name
+
+---
+
+### ✅ Example:
+
+```bash
+az monitor log-analytics workspace show \
+  --resource-group rg-monitoring-prod \
+  --workspace-name law-centralus-prod \
+  --query id \
+  --output tsv
+```
+
+This will return a value like:
+
+```
+/subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/rg-monitoring-prod/providers/Microsoft.OperationalInsights/workspaces/law-centralus-prod
+```
+
+Let me know if you want the workspace **customer ID** (for agents) or **shared key** as well.
 
 
 To **write Azure Activity Logs from a Tenant (or Management Group level)** to a **Log Analytics Workspace**, you can configure a **Diagnostic Setting** at the **Management Group level** to send logs to a Log Analytics Workspace.
