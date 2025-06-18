@@ -1,3 +1,94 @@
+Yes, you can view the **current cost of Azure VNet Flow Logs to a Storage Account** by examining **Storage Account metrics** and **Azure Cost Management**. Here's how:
+
+---
+
+## ✅ **Option 1: Azure Cost Management (Recommended for Billing Insight)**
+
+### 🔹 **Steps:**
+
+1. Go to **Azure Portal**.
+2. Navigate to **Cost Management + Billing**.
+3. Select:
+
+   * **Scope** → choose the **Subscription** or **Resource Group**.
+4. Click on **Cost analysis**.
+5. **Filter by Resource type**:
+
+   * Select **Storage Account**.
+   * Filter on the **Storage Account** used by Flow Logs.
+6. Optionally group by **Meter category** or **Meter subcategory** to see:
+
+   * **Data Write Operations**
+   * **Data Stored (GB)**
+   * **Data Retrieval**
+
+### 🔍 Tip:
+
+If you're not sure which storage account is used:
+
+* Go to **Network Watcher** → **NSG Flow Logs**
+* Select the NSG → check the **Storage Account name** in the configuration
+
+---
+
+## ✅ **Option 2: Azure Monitor Metrics (For Blob Storage Usage)**
+
+### 🔹 **Steps:**
+
+1. Go to the **Storage Account** (used by flow logs).
+2. Click on **Monitoring** → **Metrics**.
+3. Set:
+
+   * **Namespace**: `Blob`
+   * **Metric**: `Used capacity` or `Ingress` (amount written)
+   * **Time range**: Select **last 7 days** or **month to date**
+4. Add **filters**:
+
+   * Filter on **container** used for Flow Logs (`insights-logs-networksecuritygroupflowevent`)
+
+> This gives you volume-based usage; multiply by storage cost per GB to estimate actual cost.
+
+---
+
+## ✅ **Option 3: Azure Storage Account → Insights (Preview or Diagnostic Metrics)**
+
+1. Go to the **Storage Account**.
+2. Open **Insights** (preview blade).
+3. Check **Data written per day** under Blob storage metrics.
+4. Compare this with pricing for your storage tier (Hot/Cool/Archive) and redundancy type (LRS/GRS).
+
+---
+
+## 💡 Quick Cost Formula:
+
+If you know the GB stored or written:
+
+```bash
+Cost = GB × ($ per GB from your pricing tier)
+```
+
+Example:
+
+* Used capacity = 150 GB (Hot tier)
+* Storage cost = \$0.0184/GB
+* Cost = 150 × 0.0184 = **\~\$2.76/month**
+
+---
+
+## 🧠 Optional Kusto Query (if logs go to Log Analytics)
+
+If you’re ingesting Flow Logs into Log Analytics:
+
+```kusto
+Usage
+| where ResourceId contains "NetworkSecurityGroupFlowEvent"
+| summarize IngestedGB = sum(Quantity) by bin(TimeGenerated, 1d)
+```
+
+---
+
+Would you like a PowerShell or CLI script to fetch this data programmatically?
+
 Yes, you can estimate the cost of **Azure VNet Flow Logs** by breaking it into **three main cost components**:
 
 ---
