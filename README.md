@@ -1,3 +1,85 @@
+Yes, you can estimate the cost of **Azure VNet Flow Logs** by breaking it into **three main cost components**:
+
+---
+
+### 🔹 1. **Network Watcher Flow Logs Enablement**
+
+This part is free — enabling **NSG Flow Logs (VNet Flow Logs)** under **Azure Network Watcher** has **no cost by itself**. However:
+
+* **Flow logs are written to a storage account**, and that's where costs begin.
+
+---
+
+### 🔹 2. **Azure Storage Account Cost (for storing logs)**
+
+Flow Logs are stored in **Azure Blob Storage**. The cost depends on:
+
+| **Metric**       | **Estimation Hint**                                              |
+| ---------------- | ---------------------------------------------------------------- |
+| Data volume      | Depends on VM traffic and NSG rules (typically 1–5 MB/hr per VM) |
+| Storage type     | Hot / Cool / Archive tiers have different pricing                |
+| Region           | Storage cost varies by Azure region                              |
+| Retention period | Longer retention = higher cost                                   |
+
+**Example Calculation**:
+
+* Let's say **1 VM** generates **3 MB/hr**, 24 hrs/day = **\~2.2 GB/month**
+* For 100 VMs = **\~220 GB/month**
+* **Azure Blob Storage Hot Tier**: \~\$0.0184 per GB (East US) → **\~\$4.05/month** for 220 GB
+
+---
+
+### 🔹 3. **Log Ingestion to Log Analytics (Optional but common)**
+
+If you're **sending flow logs to Log Analytics**, this is where it gets expensive:
+
+| **Log Analytics Cost (Pay-as-you-go)** | **Estimation**                     |
+| -------------------------------------- | ---------------------------------- |
+| Ingestion rate                         | \~\$2.76 per GB (varies by region) |
+| Retention beyond free 31 days          | \~\$0.12 per GB/month              |
+
+**Example**:
+
+* 100 VMs, 220 GB/month → \$2.76 × 220 GB = **\$607/month**
+
+---
+
+### 🔹 Total Estimated Monthly Cost (100 VM case):
+
+| **Component**                  | **Estimated Cost (USD)** |
+| ------------------------------ | ------------------------ |
+| Azure Blob Storage (Hot)       | \~\$4                    |
+| Log Analytics (optional)       | \~\$600+                 |
+| **Total (with Log Analytics)** | \~\$604                  |
+| **Total (storage only)**       | \~\$4                    |
+
+---
+
+### 🔧 Tips to Control Costs:
+
+* Use **Cool** or **Archive** storage tier if not actively querying
+* Set **retention policy** on storage blobs
+* Avoid ingesting raw logs into Log Analytics — instead:
+
+  * Use **custom parsers**
+  * Use **Azure Data Explorer** or **Event Hubs + downstream processing**
+
+---
+
+### 🛠 Tools:
+
+You can use **Azure Pricing Calculator**:
+
+* Add **Blob Storage**
+* Add **Log Analytics**
+* Estimate log volume as:
+  `Estimated MB/hr × VMs × 24 hrs × 30 days ÷ 1024 = GB/month`
+
+Let me know how many VMs, expected traffic pattern, or if you’re using Log Analytics — I can create a more accurate estimate for you.
+
+
+
+
 Here’s how you can **create a diagnostic setting for a Management Group** using the **Azure REST API from PowerShell**.
 
 ---
