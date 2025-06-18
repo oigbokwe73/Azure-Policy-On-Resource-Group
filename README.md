@@ -1,3 +1,44 @@
+Here is a **detailed cost breakdown table** focused **only on Azure Virtual Network Flow Logs stored in Azure Storage (Hot Tier)** — **excluding VMs and Log Analytics**.
+
+---
+
+### 💰 **Azure VNet Flow Logs to Storage Account – Cost Breakdown (Hot Tier Only)**
+
+| **Cost Component**               | **Description**                                         | **Unit Rate (USD)**               | **Estimation Basis**     | **Monthly Cost (Estimate)** |
+| -------------------------------- | ------------------------------------------------------- | --------------------------------- | ------------------------ | --------------------------- |
+| **Data Written to Blob Storage** | Volume of flow log data written to storage              | \$0.0184 per GB (Hot tier, LRS)\* | 100 GB/month             | \$1.84                      |
+| **Read Operations**              | Occasional reads to validate logs or retrieve snapshots | \$0.004 per 10,000 operations     | 50,000 reads             | \$0.02                      |
+| **Write Operations**             | Logs are continuously written to Blob storage           | \$0.05 per 10,000 operations      | 300,000 writes           | \$1.50                      |
+| **List & Other Operations**      | Listing blobs/folders for diagnostics, cleanup          | \$0.004 per 10,000 operations     | 50,000 ops               | \$0.02                      |
+| **Data Retrieval (Optional)**    | Downloading or analyzing logs manually                  | \$0.01 per GB                     | 10 GB/month download     | \$0.10                      |
+| **Metadata Storage**             | Metadata for each blob (log file)                       | Included in blob pricing          | –                        | –                           |
+| **Total Estimated Cost**         | Sum of all above                                        |                                   | For 100 GB flow log data | **\~\$3.48/month**          |
+
+---
+
+### 📌 Assumptions:
+
+* Storage Tier: **Hot**
+* Redundancy: **Locally Redundant Storage (LRS)**
+* Region: **East US** (pricing may vary by region)
+* Data Volume: **100 GB/month**
+* Operations:
+
+  * **300,000 write ops/month** (avg \~100,000 log files/week)
+  * **50,000 read/listing ops/month**
+* Pricing as per [Azure Storage Pricing](https://azure.microsoft.com/en-us/pricing/details/storage/blobs/)
+
+---
+
+Let me know if you want to:
+
+* Estimate for **Cool/Archive** tiers
+* Adjust data volume or operation count
+* Include **Zone Redundant (ZRS)** or **Geo Redundant Storage (GRS)** scenarios
+
+I can also provide a **Power BI dashboard or Excel model** for month-to-month tracking.
+
+
 Here is a **cost breakdown analysis table** specifically for **Azure Network Security Group (NSG) Flow Logs written to Azure Storage (Hot Tier only)** — **excluding any VM costs**:
 
 ---
