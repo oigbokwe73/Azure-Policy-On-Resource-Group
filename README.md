@@ -1,3 +1,38 @@
+Here is a **cost breakdown analysis table** specifically for **Azure Network Security Group (NSG) Flow Logs written to Azure Storage (Hot Tier only)** — **excluding any VM costs**:
+
+---
+
+### 💰 **NSG Flow Logs to Azure Storage (Hot Tier) — Cost Breakdown Table**
+
+| **Cost Component**                           | **Unit**          | **Est. Usage per Month** | **Unit Price (USD)**          | **Monthly Cost (USD)** | **Notes**                                                            |
+| -------------------------------------------- | ----------------- | ------------------------ | ----------------------------- | ---------------------- | -------------------------------------------------------------------- |
+| **Data Written (Ingress)**                   | GB                | 150 GB                   | \$0.0184 per GB               | \$2.76                 | Based on average Flow Log volume from 100 NSGs writing 5 MB/hr       |
+| **Data Stored (Used Capacity)**              | GB                | 150 GB                   | \$0.0184 per GB               | \$2.76                 | Assuming log retention = 30 days in Hot tier                         |
+| **Write Operations (Put Blob, Append Blob)** | 10,000 operations | 100 million ops          | \$0.05 per 100,000 operations | \$50.00                | Flow logs generate many write ops (1 entry per NSG per 5 min per VM) |
+| **Read Operations (if accessed)**            | 10,000 operations | Negligible / Optional    | \$0.004 per 10,000 operations | \~\$0.00 (if no reads) | Costs incurred only if logs are accessed via portal/scripts          |
+| **Metadata Write Operations**                | 10,000 operations | Included above           | Included                      | Included               | Handled during blob writes                                           |
+| **Early Deletion (if not retained 30 days)** | Per GB            | Not applicable           | N/A                           | \$0.00                 | Only applies to Cool/Archive tiers, not Hot                          |
+
+---
+
+### 📊 **Total Estimated Monthly Cost**:
+
+**\~\$55.52 USD/month** (based on 150 GB data + 100 million write ops)
+
+---
+
+### 📝 **Assumptions**:
+
+* 100 NSGs writing flow logs
+* Average log output \~5 MB/hr per NSG → 12 GB/day total
+* Retained for 30 days in **Hot Tier**
+* \~100 million write operations/month (conservative for 5 min intervals per NSG)
+* **No access/read operations**
+
+---
+
+Would you like this breakdown in **CSV** or **Excel format** for reporting?
+
 Yes, you can view the **current cost of Azure VNet Flow Logs to a Storage Account** by examining **Storage Account metrics** and **Azure Cost Management**. Here's how:
 
 ---
