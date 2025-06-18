@@ -1,3 +1,55 @@
+Here’s a refined **cost breakdown table** for **Azure Virtual Network Flow Logs** stored in **Azure Blob Storage (Hot tier, LRS)** — **excluding VMs and Log Analytics costs**:
+
+---
+
+### 📦 VNet Flow Logs → Hot Blob Storage Cost Breakdown
+
+| **Cost Component**             | **Description**                               | **Rate**                                                              | **Assumed Usage**        | **Monthly Cost**   |
+| ------------------------------ | --------------------------------------------- | --------------------------------------------------------------------- | ------------------------ | ------------------ |
+| **Data Storage**               | Flow log data volume                          | **\$0.0184 per GB/month** ([reddit.com][1], [azure.microsoft.com][2]) | 100 GB                   | **\$1.84**         |
+| **Write Operations**           | Ingesting daily log blobs                     | **\$0.055 per 10k ops**                                               | 300k writes (daily logs) | **\$1.65**         |
+| **Read Operations**            | Occasional blob reads (e.g. integrity checks) | **\$0.0044 per 10k ops**                                              | 50k reads                | **\$0.02**         |
+| **List & Metadata Operations** | Listing blobs, container browsing             | **\$0.055 per 10k list ops**                                          | 50k ops                  | **\$0.28**         |
+| **Total Estimated Cost**       | Sum of storage + operations                   | —                                                                     | For 100 GB/month         | **\~\$3.79/month** |
+
+---
+
+### 🔍 Notes & Assumptions
+
+* **Data Storage**: Based on Azure Blob Hot tier, LRS pricing at \$0.0184/GB/mo ([azure.microsoft.com][2]).
+* **Write Ops**: Flow Logs generate many small blobs; estimated at \~300,000 write operations monthly.
+* **Read Ops**: Assumes limited usage—daily validation or audits (\~50k reads).
+* **List Ops**: Includes occasional listing for maintenance or retrieval (\~50k ops).
+* We assume **100 GB data/month**—you can adjust proportionally.
+* **Data retrieval per GB is free** in Hot tier; not included here ([learn.microsoft.com][3]).
+
+---
+
+### ✔️ How to Customize for Your Environment
+
+* **Adjust Data Volume**: Scale storage cost by actual GB/month.
+* **Operation Counts**: Increase or decrease based on your logging and management patterns.
+* **Regions**: Pricing may vary slightly outside East US; check Azure pricing page for your region.
+* To reduce costs:
+
+  * Consolidate log file frequency
+  * Use **blob lifecycle policies** (move older logs to Cool tier)
+  * Limit unnecessary blob listings or reads
+
+---
+
+If you share:
+
+* Your **actual monthly logging volume**
+* Frequency of reads or container listings
+
+I can refine this table with precise cost numbers tailored to your setup.
+
+[1]: https://www.reddit.com/r/AZURE/comments/1ideoqy/azure_blob_storage_pricing_seems_too_good_to_be/?utm_source=chatgpt.com "Azure Blob Storage pricing seems too good to be true, so I ... - Reddit"
+[2]: https://azure.microsoft.com/en-us/pricing/details/storage/blobs/?utm_source=chatgpt.com "Azure Blob Storage pricing"
+[3]: https://learn.microsoft.com/en-us/answers/questions/1622287/azure-blob-storage-pricing?utm_source=chatgpt.com "Azure blob storage pricing - Microsoft Q&A"
+
+
 Here is a **detailed cost breakdown table** focused **only on Azure Virtual Network Flow Logs stored in Azure Storage (Hot Tier)** — **excluding VMs and Log Analytics**.
 
 ---
