@@ -1,5 +1,71 @@
 Great — here's the **full Azure Policy** definition for **PostgreSQL diagnostic logs**, now including:
 
+
+
+
+Thanks! Using `count()` is a more elegant and performant approach for validating the existence of multiple enabled logs in an `existenceCondition`.
+
+Here’s how to use `count()` in your **Azure Policy `existenceCondition`** to ensure all selected diagnostic logs (based on `true` parameters) are **present and enabled**:
+
+---
+
+### ✅ **`existenceCondition` Using `count()` for PostgreSQL Diagnostic Logs**
+
+```json
+"existenceCondition": {
+  "allOf": [
+    {
+      "field": "Microsoft.Insights/diagnosticSettings/workspaceId",
+      "equals": "[parameters('logAnalyticsWorkspaceId')]"
+    },
+    {
+      "field": "count(Microsoft.Insights/diagnosticSettings/logs[?(@.category=='PostgreSQLLogs' && @.enabled==true)])",
+      "equals": "[if(equals(parameters('enablePostgreSQLLogs'), 'true'), 1, 0)]"
+    },
+    {
+      "field": "count(Microsoft.Insights/diagnosticSettings/logs[?(@.category=='QueryStoreRuntimeStatistics' && @.enabled==true)])",
+      "equals": "[if(equals(parameters('enableQueryStoreRuntimeStatistics'), 'true'), 1, 0)]"
+    },
+    {
+      "field": "count(Microsoft.Insights/diagnosticSettings/logs[?(@.category=='QueryStoreWaitStatistics' && @.enabled==true)])",
+      "equals": "[if(equals(parameters('enableQueryStoreWaitStatistics'), 'true'), 1, 0)]"
+    },
+    {
+      "field": "count(Microsoft.Insights/diagnosticSettings/logs[?(@.category=='ConnectionLogs' && @.enabled==true)])",
+      "equals": "[if(equals(parameters('enableConnectionLogs'), 'true'), 1, 0)]"
+    },
+    {
+      "field": "count(Microsoft.Insights/diagnosticSettings/logs[?(@.category=='ErrorLogs' && @.enabled==true)])",
+      "equals": "[if(equals(parameters('enableErrorLogs'), 'true'), 1, 0)]"
+    },
+    {
+      "field": "count(Microsoft.Insights/diagnosticSettings/logs[?(@.category=='AuditLogs' && @.enabled==true)])",
+      "equals": "[if(equals(parameters('enableAuditLogs'), 'true'), 1, 0)]"
+    }
+  ]
+}
+```
+
+---
+
+### 🧠 Explanation:
+
+Each condition says:
+
+> “If a log is enabled via policy parameters, then exactly **1 matching log entry (enabled==true)** must exist.”
+
+If a log is **not required** (`false`), then the count is expected to be `0`.
+
+---
+
+### 📦 Optional Follow-up
+
+Would you like the **entire updated policy JSON** now fully merged with this `count()`-based `existenceCondition`?
+Or should I export this into a **.json file** or **Terraform-compatible block**?
+
+Let me know how you'd like to proceed.
+
+
 ✅ `deployIfNotExists` effect
 ✅ All log categories with individually selectable **true/false** options via `allowedValues`
 ✅ Targeting **Log Analytics Workspace**
