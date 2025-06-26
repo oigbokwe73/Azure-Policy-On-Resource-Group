@@ -1,3 +1,186 @@
+
+Great — here's the **full Azure Policy** definition for **PostgreSQL diagnostic logs**, now including:
+
+✅ `deployIfNotExists` effect
+✅ All log categories with individually selectable **true/false** options via `allowedValues`
+✅ Targeting **Log Analytics Workspace**
+✅ Ready for remediation task creation
+
+---
+
+### 🔐 **Azure Policy: PostgreSQL Diagnostic Logging – deployIfNotExists + Parameterized Logs**
+
+```json
+{
+  "properties": {
+    "displayName": "Ensure Diagnostic Logs are Enabled for PostgreSQL with Per-Log Options",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "description": "Deploys Diagnostic Settings on PostgreSQL servers to send selected logs to Log Analytics. Each log category can be independently enabled or disabled.",
+    "parameters": {
+      "logAnalyticsWorkspaceId": {
+        "type": "String",
+        "metadata": {
+          "displayName": "Log Analytics Workspace Resource ID",
+          "description": "Resource ID of the Log Analytics Workspace"
+        }
+      },
+      "enablePostgreSQLLogs": {
+        "type": "String",
+        "allowedValues": ["true", "false"],
+        "defaultValue": "false",
+        "metadata": {
+          "displayName": "Enable PostgreSQL Logs",
+          "description": "Whether to enable PostgreSQL general logs"
+        }
+      },
+      "enableQueryStoreRuntimeStatistics": {
+        "type": "String",
+        "allowedValues": ["true", "false"],
+        "defaultValue": "false",
+        "metadata": {
+          "displayName": "Enable Query Store Runtime Statistics Logs",
+          "description": "Whether to enable query runtime statistics logs"
+        }
+      },
+      "enableQueryStoreWaitStatistics": {
+        "type": "String",
+        "allowedValues": ["true", "false"],
+        "defaultValue": "false",
+        "metadata": {
+          "displayName": "Enable Query Store Wait Statistics Logs",
+          "description": "Whether to enable wait statistics logs"
+        }
+      },
+      "enableConnectionLogs": {
+        "type": "String",
+        "allowedValues": ["true", "false"],
+        "defaultValue": "false",
+        "metadata": {
+          "displayName": "Enable Connection Logs",
+          "description": "Whether to enable connection logs"
+        }
+      },
+      "enableErrorLogs": {
+        "type": "String",
+        "allowedValues": ["true", "false"],
+        "defaultValue": "false",
+        "metadata": {
+          "displayName": "Enable Error Logs",
+          "description": "Whether to enable error logs"
+        }
+      },
+      "enableAuditLogs": {
+        "type": "String",
+        "allowedValues": ["true", "false"],
+        "defaultValue": "false",
+        "metadata": {
+          "displayName": "Enable Audit Logs",
+          "description": "Whether to enable audit logs"
+        }
+      }
+    },
+    "policyRule": {
+      "if": {
+        "field": "type",
+        "equals": "Microsoft.DBforPostgreSQL/servers"
+      },
+      "then": {
+        "effect": "deployIfNotExists",
+        "details": {
+          "type": "Microsoft.Insights/diagnosticSettings",
+          "roleDefinitionIds": [
+            "/providers/microsoft.authorization/roleDefinitions/749f88d5-cbae-40b8-bcfc-e573ddc772fa"  // Monitoring Contributor
+          ],
+          "existenceCondition": {
+            "allOf": [
+              {
+                "field": "Microsoft.Insights/diagnosticSettings/workspaceId",
+                "equals": "[parameters('logAnalyticsWorkspaceId')]"
+              }
+            ]
+          },
+          "deployment": {
+            "properties": {
+              "mode": "incremental",
+              "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "resources": [
+                  {
+                    "type": "Microsoft.Insights/diagnosticSettings",
+                    "apiVersion": "2021-05-01-preview",
+                    "name": "[concat('diag-', field('name'))]",
+                    "properties": {
+                      "targetResourceId": "[resourceId('Microsoft.DBforPostgreSQL/servers', field('name'))]",
+                      "workspaceId": "[parameters('logAnalyticsWorkspaceId')]",
+                      "logs": [
+                        {
+                          "category": "PostgreSQLLogs",
+                          "enabled": "[equals(parameters('enablePostgreSQLLogs'), 'true')]",
+                          "retentionPolicy": { "enabled": false, "days": 0 }
+                        },
+                        {
+                          "category": "QueryStoreRuntimeStatistics",
+                          "enabled": "[equals(parameters('enableQueryStoreRuntimeStatistics'), 'true')]",
+                          "retentionPolicy": { "enabled": false, "days": 0 }
+                        },
+                        {
+                          "category": "QueryStoreWaitStatistics",
+                          "enabled": "[equals(parameters('enableQueryStoreWaitStatistics'), 'true')]",
+                          "retentionPolicy": { "enabled": false, "days": 0 }
+                        },
+                        {
+                          "category": "ConnectionLogs",
+                          "enabled": "[equals(parameters('enableConnectionLogs'), 'true')]",
+                          "retentionPolicy": { "enabled": false, "days": 0 }
+                        },
+                        {
+                          "category": "ErrorLogs",
+                          "enabled": "[equals(parameters('enableErrorLogs'), 'true')]",
+                          "retentionPolicy": { "enabled": false, "days": 0 }
+                        },
+                        {
+                          "category": "AuditLogs",
+                          "enabled": "[equals(parameters('enableAuditLogs'), 'true')]",
+                          "retentionPolicy": { "enabled": false, "days": 0 }
+                        }
+                      ],
+                      "metrics": [
+                        {
+                          "category": "AllMetrics",
+                          "enabled": true,
+                          "retentionPolicy": { "enabled": false, "days": 0 }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+---
+
+### 📦 Optional Add-ons
+
+Would you like one or more of the following?
+
+1. ✅ **Terraform** version of this policy
+2. ✅ **PowerShell script** to create remediation task
+3. ✅ **Policy assignment JSON** with example parameter values
+4. ✅ **Initiative** bundling this with related PostgreSQL policies
+
+Let me know what you'd like next, and I’ll build it.
+
+
+
 Great — here's the **full Azure Policy** definition for **PostgreSQL diagnostic logs**, now including:
 
 
