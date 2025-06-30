@@ -1,4 +1,184 @@
-	
+
+Here is a **clear, working example script** to set up **Azure Managed Identity Federated Identity Credential (FID)** using **OpenShift as the OpenID Connect issuer**:
+
+---
+
+## 🚩 What this script does
+
+✅ Creates a **User-Assigned Managed Identity** in Azure.
+✅ Adds a **Federated Identity Credential** to this MI using:
+
+* OpenShift’s OIDC issuer URL.
+* The OpenShift workload’s **Kubernetes Service Account (KSA)** as the `subject`.
+  ✅ Enables your **OpenShift workloads to authenticate to Azure securely without client secrets**, leveraging the **KSA token**.
+
+---
+
+## 🚩 Prerequisites
+
+✅ You have:
+
+* OpenShift cluster with an **OIDC-compliant identity provider (Keycloak/RH-SSO) configured.**
+* Service Account in OpenShift:
+
+  * Namespace: `my-namespace`
+  * Service Account: `my-sa`
+* Your OIDC Issuer URL:
+
+  ```
+  https://<openshift-domain>/auth/realms/<realm>
+  ```
+
+✅ You are logged into Azure CLI with sufficient permissions.
+
+---
+
+## 🚩 Azure CLI Script
+
+```bash
+#!/bin/bash
+
+# VARIABLES (update to your environment)
+LOCATION="eastus"
+RG="rg-openshift-fid"
+MI_NAME="mi-openshift-fid"
+ISSUER_URL="https://<openshift-domain>/auth/realms/<realm>"
+KSA_NAMESPACE="my-namespace"
+KSA_NAME="my-sa"
+FID_NAME="fid-openshift-sa"
+
+# Create Resource Group if needed
+az group create --name $RG --location $LOCATION
+
+# Create User-Assigned Managed Identity
+az identity create \
+    --name $MI_NAME \
+    --resource-group $RG \
+    --location $LOCATION
+
+# Get Managed Identity Client ID
+MI_CLIENT_ID=$(az identity show --name $MI_NAME --resource-group $RG --query clientId -o tsv)
+echo "Managed Identity Client ID: $MI_CLIENT_ID"
+
+# Configure Federated Identity Credential
+az identity federated-credential create \
+    --name $FID_NAME \
+    --identity-name $MI_NAME \
+    --resource-group $RG \
+    --issuer $ISSUER_URL \
+    --subject "system:serviceaccount:${KSA_NAMESPACE}:${KSA_NAME}" \
+    --audiences "api://AzureADTokenExchange"
+
+echo "Federated Identity Credential created successfully."
+```
+
+---
+
+## 🚩 Explanation of Key Parameters
+
+✅ **--issuer**:
+Your **OpenShift OIDC issuer URL**:
+
+```
+https://<openshift-domain>/auth/realms/<realm>
+```
+
+✅ **--subject**:
+Format:
+
+```
+system:serviceaccount:<namespace>:<serviceaccount-name>
+```
+
+This ensures **only this KSA can assume the Azure Managed Identity**.
+
+✅ **--audiences**:
+Use:
+
+```
+api://AzureADTokenExchange
+```
+
+(required for Azure AD token exchange).
+
+---
+
+## 🚩 What Happens Next
+
+### In **OpenShift**:
+
+✅ Your workload (pod) uses the **service account (`my-sa` in `my-namespace`)**, which will:
+
+* Retrieve its projected service account token (`token` file in `/var/run/secrets/kubernetes.io/serviceaccount/`).
+
+✅ Your workload uses the Azure SDK:
+
+* Uses the **OIDC token to request an Azure access token** for the Managed Identity.
+* Accesses Azure resources securely without client secrets.
+
+---
+
+### In **Azure**:
+
+✅ Azure AD verifies:
+
+* The **token signature against your OpenShift issuer’s JWKS endpoint.**
+* The `aud` (audience) claim matches `api://AzureADTokenExchange`.
+* The `sub` (subject) claim matches:
+
+  ```
+  system:serviceaccount:my-namespace:my-sa
+  ```
+
+✅ Issues an access token with the Managed Identity's permissions.
+
+---
+
+## 🚩 Additional Steps (Post-Script)
+
+✅ **Assign Azure RBAC Role** to the Managed Identity, for example, `Key Vault Secrets User`:
+
+```bash
+az role assignment create \
+    --assignee $MI_CLIENT_ID \
+    --role "Key Vault Secrets User" \
+    --scope "/subscriptions/<sub-id>/resourceGroups/<kv-rg>/providers/Microsoft.KeyVault/vaults/<kv-name>"
+```
+
+✅ Update your **OpenShift workload YAML** to use the correct **service account**.
+
+✅ Use the **Azure SDK with default credentials** in your workload:
+
+```python
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
+
+credential = DefaultAzureCredential()
+client = SecretClient(vault_url="https://<kv-name>.vault.azure.net/", credential=credential)
+
+secret = client.get_secret("my-secret")
+print(secret.value)
+```
+
+---
+
+## ✅ Summary
+
+✅ **This script securely enables OpenShift workloads to authenticate to Azure using FID and MI without secrets.**
+✅ Uses your **OpenShift OIDC issuer** for federation with Azure.
+✅ **Maintains security while simplifying credential management** for accessing Azure resources from OpenShift workloads.
+
+---
+
+If you would like next:
+✅ **A Terraform equivalent for IaC consistency.**
+✅ **Sample OpenShift workload YAML** demonstrating integration with projected tokens.
+✅ **Testing scripts to validate the FID pipeline end-to-end.**
+
+Let me know, and I will prepare these for your implementation readiness.
+
+
+ 
 ## Open shift Architecture
 ![image](https://github.com/user-attachments/assets/326803e2-fd0a-40d0-b80d-6064adcb3534)
 
