@@ -1,6 +1,12 @@
-
+	
 ## Open shift Architecture
 ![image](https://github.com/user-attachments/assets/326803e2-fd0a-40d0-b80d-6064adcb3534)
+
+
+
+## Landing Zone
+![image](https://github.com/user-attachments/assets/ac407368-a1c4-4e8d-9eff-57b94dfdd422)
+
 
 
 
