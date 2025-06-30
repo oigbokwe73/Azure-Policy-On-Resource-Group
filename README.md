@@ -1,4 +1,9 @@
 
+## Open shift Architecture
+![image](https://github.com/user-attachments/assets/326803e2-fd0a-40d0-b80d-6064adcb3534)
+
+
+
 Great — here's the **full Azure Policy** definition for **PostgreSQL diagnostic logs**, now including:
 
 ✅ `deployIfNotExists` effect
