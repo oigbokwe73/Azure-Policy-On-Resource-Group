@@ -1,3 +1,121 @@
+To register **EncryptionAtHost** in your Azure subscription and enable it on your VMs, follow these steps:
+
+---
+
+## ✅ 1. Register the feature in your subscription
+
+Use the Azure CLI or PowerShell:
+
+### CLI
+
+```bash
+az feature register \
+  --namespace Microsoft.Compute \
+  --name EncryptionAtHost
+
+az feature show \
+  --namespace Microsoft.Compute \
+  --name EncryptionAtHost
+```
+
+Check that the registration state becomes **Registered**—this may take several minutes ([learn.microsoft.com][1]).
+
+### PowerShell
+
+```powershell
+Register-AzProviderFeature -FeatureName EncryptionAtHost `
+  -ProviderNamespace Microsoft.Compute
+
+Get-AzProviderFeature -FeatureName EncryptionAtHost `
+  -ProviderNamespace Microsoft.Compute
+```
+
+Again, wait until it's **Registered** .
+
+---
+
+## 🔧 2. Enable on a VM or VM Scale Set
+
+* **Via CLI**:
+
+  * When creating a new VM:
+
+    ```bash
+    az vm create \
+      --resource-group MyRG \
+      --name MyVM \
+      --encryption-at-host true \
+      ...other params...
+    ```
+  * On an existing VM (must be **deallocated** first):
+
+    ```bash
+    az vm deallocate --resource-group MyRG --name MyVM
+    az vm update \
+      --resource-group MyRG \
+      --name MyVM \
+      --set securityProfile.encryptionAtHost=true
+    az vm start --resource-group MyRG --name MyVM
+    ```
+
+* **Via Azure portal**:
+
+  * Go to the Disks pane of a **deallocated** VM.
+  * Expand **Additional settings**.
+  * Toggle **Encryption at host** to **Yes**, then **Save** ([docs.azure.cn][2], [azadvertizer.net][3]).
+
+---
+
+## 🔐 3. Required RBAC permissions
+
+### A) Feature registration & VM updates
+
+* You need at least the **Contributor** role on the subscription or resource group to register features and update VMs.
+* **Owner** also works; **Reader** does **not** suffice .
+
+### B) Key Vault / Disk Encryption Set (if using customer‑managed keys)
+
+If you want to encrypt OS/data disk caches using your own keys, you must:
+
+1. Create a **Key Vault** (with soft-delete & purge protection) and a **Disk Encryption Set**.
+2. Assign roles so the VM's **Managed Identity**, **Disk Encryption Set**, or **Backup** service can access the vault.
+
+Typically you need:
+
+* **Key Vault Administrator** or **Key Vault Crypto Officer** or **Contributor** to manage vaults and keys ([learn.microsoft.com][4], [learn.microsoft.com][5], [learn.microsoft.com][6]).
+* For Azure Backup of encrypted VMs: assign **Key Vault Administrator** to the "Backup Management Service" application (or equivalent custom RBAC role) ([learn.microsoft.com][5]).
+
+---
+
+## 🧩 Summary Table
+
+| Task / Resource                             | Minimum RBAC Role Required                     |
+| ------------------------------------------- | ---------------------------------------------- |
+| Register `EncryptionAtHost` feature         | **Contributor** (or Owner)                     |
+| Enable host encryption on VM                | **Contributor** on VM’s RG or VM itself        |
+| Create/configure Key Vault & encryption set | **Key Vault Administrator** or Crypto Officer  |
+| Allow VM MSI / Backup service to use vault  | **Key Vault Administrator** role or equivalent |
+
+---
+
+## TL;DR
+
+1. **Register** the feature using CLI or PowerShell.
+2. **Assign** Contributor role for feature registration & VM modifications.
+3. **Enable** encryption-at-host on deallocated VMs (via CLI or portal).
+4. **(Optional)** If using custom keys, set up Key Vault + Disk Encryption Set and assign Key Vault Admin/Crypto access to identities involved.
+
+Let me know if you'd like example scripts for RBAC role assignments or help automating this!
+
+[1]: https://learn.microsoft.com/en-us/azure/virtual-machines/linux/disks-enable-host-based-encryption-cli?utm_source=chatgpt.com "Enable end-to-end encryption using encryption at host - Azure CLI"
+[2]: https://docs.azure.cn/en-us/virtual-machines/windows/disks-enable-host-based-encryption-powershell?utm_source=chatgpt.com "Azure PowerShell - Enable end-to-end encryption on your VM host"
+[3]: https://www.azadvertizer.net/azpolicyadvertizer/fc4d8e41-e223-45ea-9bf5-eada37891d87.html?utm_source=chatgpt.com "fc4d8e41-e223-45ea-9bf5-eada37891d87 Azure Policy - AzAdvertizer"
+[4]: https://learn.microsoft.com/en-us/azure/virtual-machines/disks-enable-host-based-encryption-portal?utm_source=chatgpt.com "Enable end-to-end encryption using encryption at host - Azure portal"
+[5]: https://learn.microsoft.com/en-us/azure/backup/backup-azure-vms-encryption?utm_source=chatgpt.com "Back up and restore encrypted Azure VMs - Learn Microsoft"
+[6]: https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles?utm_source=chatgpt.com "Azure built-in roles - Azure RBAC | Microsoft Learn"
+
+
+
 
 Here is a **clear, working example script** to set up **Azure Managed Identity Federated Identity Credential (FID)** using **OpenShift as the OpenID Connect issuer**:
 
