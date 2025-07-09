@@ -1,6 +1,5 @@
 
 
-![image](https://github.com/user-attachments/assets/02c1d2dd-dea1-452f-bcf4-ee491c4243f9)
 
 
 To register **EncryptionAtHost** in your Azure subscription and enable it on your VMs, follow these steps
