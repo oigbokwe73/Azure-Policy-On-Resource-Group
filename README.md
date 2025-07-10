@@ -1,3 +1,55 @@
+Yes — Azure service principals (SPs) **can use federated credentials instead of certificates** when working with Terraform Cloud. Here's how it works:
+
+---
+
+## 🔐 Federated Credentials with Terraform Cloud (Dynamic Provider Credentials)
+
+Terraform Cloud supports Azure authentication via **OIDC-based federated credentials**, avoiding long-lived certificate or secret storage. This uses the **dynamic provider credentials** feature ([HashiCorp Developer][1]).
+
+### ✅ Steps to Configure:
+
+1. **Create an Azure AD App + Service Principal**
+
+2. **Add Federated Credentials** under **Certificates & secrets → Federated credentials**, specifying:
+
+   * **Issuer**: `https://app.terraform.io`
+   * **Subject**: `organization:<org>:project:<proj>:workspace:<ws>:run_phase:<plan|apply>`
+   * **Audience**: `api://AzureADTokenExchange` ([Dev Community][2], [HashiCorp Developer][1]).
+
+   You typically need **two credentials**—one for `plan` and one for `apply`—unless you use claim matching like `run_phase:*` ([Dev Community][2]).
+
+3. **Assign SP to subscription**, with the necessary RBAC roles.
+
+4. **Configure Terraform Cloud workspace**:
+   Set environment variables like:
+
+   * `TFC_AZURE_PROVIDER_AUTH = true`
+   * `TFC_AZURE_RUN_CLIENT_ID = <your SP’s client ID>` ([HashiCorp Developer][1], [Stack Overflow][3]).
+
+5. **Terraform runs** will automatically use short-lived Azure tokens via OIDC, no certs or secrets needed ([HashiCorp][4]).
+
+---
+
+## ⚠️ Key Considerations
+
+* **Certificate-less**: Eliminates the need to handle certs or client secrets.
+* **Secure**: Tokens are ephemeral, reducing exposure risk.
+* **Requires Terraform Cloud**: This setup only works in **Terraform Cloud** (or Enterprise with OIDC support), not plain local CLI.
+* **Provider versions**: Use azurerm ≥ 3.25.0 and azuread ≥ 2.29.0 ([HashiCorp Developer][1]).
+* **Subject matching**: You can either create one federated credential per run phase, or use wildcard/claims matching to simplify ([Dev Community][2]).
+
+---
+
+### ✅ Bottom Line
+
+> **Yes**, you can configure your Azure SP to authenticate via federated credentials with Terraform Cloud, avoiding certificates entirely. This is a best-practice approach that improves security and operational simplicity.
+
+Would you like a Terraform snippet you can drop into your existing subscription bootstrap to implement this?
+
+[1]: https://developer.hashicorp.com/terraform/cloud-docs/workspaces/dynamic-provider-credentials/azure-configuration?utm_source=chatgpt.com "Use dynamic credentials with the Azure provider in HCP Terraform"
+[2]: https://dev.to/rokicool/hcp-terraform-to-azure-cloud-using-oidc-2i28?utm_source=chatgpt.com "HCP Terraform to Azure Cloud using OIDC - DEV Community"
+[3]: https://stackoverflow.com/questions/77138047/az-login-using-federated-service-principal-credentials?utm_source=chatgpt.com "az login using federated service principal credentials - Stack Overflow"
+[4]: https://www.hashicorp.com/en/blog/access-azure-from-hcp-terraform-with-oidc-federation?utm_source=chatgpt.com "Access Azure from HCP Terraform with OIDC federation - HashiCorp"
 
 
 
