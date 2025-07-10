@@ -1,3 +1,82 @@
+```terraform
+
+# Terraform script to create Azure Storage Account with Private Endpoint (including explicit dependency)
+
+provider "azurerm" {
+  features {}
+}
+
+resource "azurerm_resource_group" "rg" {
+  name     = "rg-storage-private-endpoint"
+  location = "East US"
+}
+
+resource "azurerm_virtual_network" "vnet" {
+  name                = "vnet-storage-pe"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_subnet" "subnet" {
+  name                 = "subnet-storage-pe"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.1.0/24"]
+  private_endpoint_network_policies_enabled = false
+}
+
+resource "azurerm_private_endpoint" "private_endpoint" {
+  name                = "pe-storage-account"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  subnet_id           = azurerm_subnet.subnet.id
+
+  private_service_connection {
+    name                           = "psc-storage-account"
+    private_connection_resource_id = azurerm_storage_account.storage.id
+    subresource_names              = ["blob"]
+    is_manual_connection           = false
+  }
+}
+
+resource "azurerm_storage_account" "storage" {
+  name                     = "stgprivatepe12345"
+  resource_group_name      = azurerm_resource_group.rg.name
+  location                 = azurerm_resource_group.rg.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  allow_blob_public_access = false
+
+  depends_on = [
+    azurerm_private_endpoint.private_endpoint
+  ]
+}
+
+resource "azurerm_private_dns_zone" "privatedns" {
+  name                = "privatelink.blob.core.windows.net"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "dnslink" {
+  name                  = "dnslink-storage-pe"
+  resource_group_name   = azurerm_resource_group.rg.name
+  private_dns_zone_name = azurerm_private_dns_zone.privatedns.name
+  virtual_network_id    = azurerm_virtual_network.vnet.id
+}
+
+resource "azurerm_private_dns_a_record" "storage_dns" {
+  name                = azurerm_storage_account.storage.name
+  zone_name           = azurerm_private_dns_zone.privatedns.name
+  resource_group_name = azurerm_resource_group.rg.name
+  ttl                 = 300
+  records             = [azurerm_private_endpoint.private_endpoint.private_service_connection[0].private_ip_address]
+}
+
+```
+
+
+
 Yes — Azure service principals (SPs) **can use federated credentials instead of certificates** when working with Terraform Cloud. Here's how it works:
 
 ---
