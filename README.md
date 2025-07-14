@@ -1,8 +1,4 @@
 
-<img width="670" height="565" alt="image" src="https://github.com/user-attachments/assets/ccfad23c-9496-4585-b82b-ecccf026bf84" />
-
-
-
 ```terraform
 
 # Terraform script to create Azure Storage Account with Private Endpoint (including explicit dependency)
