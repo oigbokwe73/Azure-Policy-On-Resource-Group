@@ -1,52 +1,65 @@
 
-Here’s a **Mermaid sequence diagram** that illustrates traffic flow from an **on-premises network** to an **Azure Managed Pool** (such as a VMSS or Dev/Test Pool) **deployed in a spoke virtual network** that is **peered to both the hub and on-prem** (via VPN/ExpressRoute through the hub):
+Here's an updated **Mermaid sequence diagram** that includes:
+
+* 🔄 **Bidirectional traffic** between On-Prem and Azure
+* 🔐 **Azure Key Vault** accessed by the **Azure Managed Pool**
+* 🧠 **Hub-and-Spoke** topology with **private peering**, **UDRs**, and **Gateway Transit**
+* 💬 End-to-end flow from **on-prem** to **Managed Pool**, and Managed Pool’s secure access to **Key Vault**
 
 ---
 
-### ✅ **Assumptions**:
-
-* On-prem accesses Azure via VPN or ExpressRoute.
-* Hub-and-Spoke topology is used.
-* Managed Pool is in Spoke VNet.
-* NVA or Azure Firewall may be present in the Hub for routing/security.
-* DNS and UDRs are correctly configured for private IP resolution.
-
----
-
-### 📈 Mermaid Sequence Diagram
+### ✅ Updated Mermaid Sequence Diagram: On-Prem ↔ Azure Managed Pool with Key Vault
 
 ```mermaid
 sequenceDiagram
     participant OnPrem as On-Premises Network
     participant VPNGW as Azure VPN/ER Gateway (Hub)
     participant Firewall as Azure Firewall / NVA (Hub)
-    participant HubVNet as Hub VNet
-    participant SpokeVNet as Spoke VNet
-    participant ManagedPool as Azure Managed Pool (VMSS/DevTest)
+    participant HubVNet as Hub Virtual Network
+    participant SpokeVNet as Spoke Virtual Network
+    participant ManagedPool as Azure Managed Pool (VMSS)
+    participant KeyVault as Azure Key Vault (Private Endpoint)
 
-    OnPrem->>VPNGW: Initiates connection (e.g., RDP/HTTP)
-    VPNGW->>Firewall: Routes traffic to Spoke via UDR/NVA
-    Firewall->>HubVNet: Applies NSG, route filtering
-    HubVNet->>SpokeVNet: Peered traffic forwarded
-    SpokeVNet->>ManagedPool: Delivers traffic to Managed Pool
+    %% === On-Prem → Azure Managed Pool ===
+    OnPrem->>VPNGW: Initiates secure traffic (e.g., SSH/HTTPS)
+    VPNGW->>Firewall: Passes traffic to Firewall
+    Firewall->>HubVNet: Inspects and routes traffic
+    HubVNet->>SpokeVNet: Peered via VNet Peering with forwarding enabled
+    SpokeVNet->>ManagedPool: Traffic reaches Azure Managed Pool VM
 
-    ManagedPool-->>SpokeVNet: Responds to request
-    SpokeVNet-->>HubVNet: Routed via VNet Peering
-    HubVNet-->>Firewall: Traffic inspected (optional)
-    Firewall-->>VPNGW: Forwarded to Gateway
-    VPNGW-->>OnPrem: Returns response to on-prem
+    %% === Managed Pool → Key Vault Access ===
+    ManagedPool->>KeyVault: Requests secrets via Private Endpoint (HTTPS)
+    KeyVault-->>ManagedPool: Returns secrets securely
+
+    %% === Azure Managed Pool → On-Prem (Bidirectional) ===
+    ManagedPool->>SpokeVNet: Sends response/data back to On-Prem
+    SpokeVNet->>HubVNet: Routed via VNet Peering
+    HubVNet->>Firewall: Applies NSG, UDR (optional NVA)
+    Firewall->>VPNGW: Routed to Gateway
+    VPNGW->>OnPrem: Delivered to On-Prem client
 ```
 
 ---
 
-### 🔒 Key Considerations
+### 🔒 Security Highlights
 
-* **NSGs** must allow traffic from on-prem IP ranges.
-* **UDRs** in the spoke must route `0.0.0.0/0` or `on-prem address ranges` to the **hub firewall**.
-* **Peering** must allow **forwarded traffic** and **gateway transit**.
-* DNS resolution may require **private DNS zones** or **forwarders**.
+| Component        | Notes                                                                                      |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| **Key Vault**    | Uses **Private Endpoint**, secured via **Private DNS Zone** and **Firewall bypass rules**. |
+| **Firewall/NVA** | Enforces east-west and ingress/egress filtering between on-prem and Azure VNets.           |
+| **NSG/UDR**      | Ensure correct flow routing and restriction per subnet.                                    |
+| **Spoke VNet**   | Does not have a gateway. Uses **Gateway Transit** via hub.                                 |
+| **Managed Pool** | Uses Managed Identity to access Key Vault securely.                                        |
 
-Let me know if you want this in a **network diagram**, **Terraform/Bicep setup**, or want to simulate **latency/throughput** flow characteristics.
+---
+
+Let me know if you'd like:
+
+* A **network diagram** version of this (topology-focused)
+* **Terraform** or **Bicep** to build this setup
+* Integration with **App Gateway** or **Azure Bastion** for management access
+
+I can also convert this into an **interactive design** if you're using tools like **Miro** or **Lucidchart**.
 
 ```terraform
 
