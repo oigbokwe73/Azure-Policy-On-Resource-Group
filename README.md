@@ -1,4 +1,53 @@
 
+Here’s a **Mermaid sequence diagram** that illustrates traffic flow from an **on-premises network** to an **Azure Managed Pool** (such as a VMSS or Dev/Test Pool) **deployed in a spoke virtual network** that is **peered to both the hub and on-prem** (via VPN/ExpressRoute through the hub):
+
+---
+
+### ✅ **Assumptions**:
+
+* On-prem accesses Azure via VPN or ExpressRoute.
+* Hub-and-Spoke topology is used.
+* Managed Pool is in Spoke VNet.
+* NVA or Azure Firewall may be present in the Hub for routing/security.
+* DNS and UDRs are correctly configured for private IP resolution.
+
+---
+
+### 📈 Mermaid Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant OnPrem as On-Premises Network
+    participant VPNGW as Azure VPN/ER Gateway (Hub)
+    participant Firewall as Azure Firewall / NVA (Hub)
+    participant HubVNet as Hub VNet
+    participant SpokeVNet as Spoke VNet
+    participant ManagedPool as Azure Managed Pool (VMSS/DevTest)
+
+    OnPrem->>VPNGW: Initiates connection (e.g., RDP/HTTP)
+    VPNGW->>Firewall: Routes traffic to Spoke via UDR/NVA
+    Firewall->>HubVNet: Applies NSG, route filtering
+    HubVNet->>SpokeVNet: Peered traffic forwarded
+    SpokeVNet->>ManagedPool: Delivers traffic to Managed Pool
+
+    ManagedPool-->>SpokeVNet: Responds to request
+    SpokeVNet-->>HubVNet: Routed via VNet Peering
+    HubVNet-->>Firewall: Traffic inspected (optional)
+    Firewall-->>VPNGW: Forwarded to Gateway
+    VPNGW-->>OnPrem: Returns response to on-prem
+```
+
+---
+
+### 🔒 Key Considerations
+
+* **NSGs** must allow traffic from on-prem IP ranges.
+* **UDRs** in the spoke must route `0.0.0.0/0` or `on-prem address ranges` to the **hub firewall**.
+* **Peering** must allow **forwarded traffic** and **gateway transit**.
+* DNS resolution may require **private DNS zones** or **forwarders**.
+
+Let me know if you want this in a **network diagram**, **Terraform/Bicep setup**, or want to simulate **latency/throughput** flow characteristics.
+
 ```terraform
 
 # Terraform script to create Azure Storage Account with Private Endpoint (including explicit dependency)
