@@ -1,3 +1,95 @@
+Here's an example automation script that **creates and executes a remediation task** in **Azure Policy**, using a **User Assigned Managed Identity (UAMI)** to **authenticate and remediate non-compliant resources**.
+
+---
+
+### 🎯 Use Case:
+
+* You have a **DeployIfNotExists** or **Modify** Azure Policy.
+* You want to **automate remediation** using an identity with permission to make the necessary changes.
+
+---
+
+## 🛠️ Prerequisites:
+
+* Azure CLI installed
+* Logged in with permissions to assign roles and create policies
+* A policy definition and assignment already created
+* A **User Assigned Managed Identity** with Contributor or specific role access to target scope
+
+---
+
+## ✅ Script: Bash using Azure CLI
+
+```bash
+#!/bin/bash
+
+# Variables
+SUBSCRIPTION_ID="<your-subscription-id>"
+RESOURCE_GROUP="<your-resource-group>"
+MI_NAME="<your-managed-identity-name>"
+SCOPE="/subscriptions/$SUBSCRIPTION_ID"
+POLICY_ASSIGNMENT_NAME="<your-policy-assignment-name>"
+
+# Get Managed Identity ID
+MI_ID=$(az identity show \
+  --name "$MI_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "id" -o tsv)
+
+echo "Managed Identity ID: $MI_ID"
+
+# Assign permissions to the MI (e.g., Contributor at Subscription level)
+az role assignment create \
+  --assignee "$MI_ID" \
+  --role "Contributor" \
+  --scope "$SCOPE"
+
+# Set the MI as the identity for remediation
+REMEDIATION_ID=$(az policy remediation create \
+  --name "remediate-$POLICY_ASSIGNMENT_NAME" \
+  --policy-assignment "$POLICY_ASSIGNMENT_NAME" \
+  --resource-discovery-mode ReEvaluateCompliance \
+  --identity-assignment-id "$MI_ID" \
+  --scope "$SCOPE" \
+  --query "name" -o tsv)
+
+echo "Remediation task created: $REMEDIATION_ID"
+
+# Optional: Monitor remediation status
+echo "Monitoring remediation status..."
+az policy remediation show \
+  --name "$REMEDIATION_ID" \
+  --scope "$SCOPE" \
+  --output table
+```
+
+---
+
+## 🔐 Notes on Permissions:
+
+The Managed Identity must have:
+
+* `Microsoft.PolicyInsights/remediations/write`
+* Appropriate action permissions depending on what the policy is doing (e.g., creating storage accounts, setting tags, enabling diagnostics).
+
+---
+
+## 📦 Example Policy Assignment:
+
+Make sure the policy definition has:
+
+```json
+"identity": {
+  "type": "UserAssigned",
+  "userAssignedIdentities": {
+    "/subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.ManagedIdentity/userAssignedIdentities/<mi>": {}
+  }
+}
+```
+
+---
+
+Would you like a **Terraform version**, **PowerShell**, or a sample **policy definition with DeployIfNotExists** included?
 
 Here's an updated **Mermaid sequence diagram** that includes:
 
