@@ -1,3 +1,69 @@
+In Azure, **you cannot directly remove yourself as the Owner of a subscription** unless **another user or service principal has Owner access** to that subscription. Azure enforces this to ensure that there is always at least one Owner with full control.
+
+However, you can remove yourself **indirectly**, by having another Owner remove your access.
+
+### 🔁 Option 1: **Another Owner removes you**
+
+1. Ask **another user with “Owner” role** on the subscription to:
+
+   * Go to **Azure Portal** > **Subscriptions** > select the subscription.
+   * Click **Access control (IAM)**.
+   * Find your name in the list.
+   * Click the **“…” (three dots)** next to your name.
+   * Select **Remove**.
+
+> ✅ This is the only clean way to remove yourself if there is another Owner.
+
+---
+
+### 🔒 Option 2: **Transfer ownership and remove yourself**
+
+If you're the only Owner:
+
+1. **Add another user as Owner**:
+
+   * Go to **Subscriptions** > Select your subscription.
+   * Access **IAM (Access control)**.
+   * Click **+ Add > Add role assignment**.
+   * Assign **Owner** role to another user/service principal.
+2. After they accept the role, ask them to **remove you** using Option 1.
+
+---
+
+### ❌ What you **can’t do**:
+
+* You **cannot remove yourself** via portal, CLI, or PowerShell **if you are the only Owner**.
+* You **cannot change the billing owner** (for CSP/MCA subscriptions) unless through a transfer request.
+
+---
+
+### 🧰 Alternative via PowerShell/CLI (another Owner runs this):
+
+```powershell
+# Requires: Az module installed
+Remove-AzRoleAssignment -SignInName 'your-email@domain.com' -RoleDefinitionName 'Owner' -Scope '/subscriptions/<subscription-id>'
+```
+
+Or using Azure CLI:
+
+```bash
+az role assignment delete --assignee your-email@domain.com --role "Owner" --scope /subscriptions/<subscription-id>
+```
+
+---
+
+### 🧾 If this is a **Personal Subscription**:
+
+You can **cancel** the subscription (if you're the billing owner):
+
+* Go to [https://portal.azure.com](https://portal.azure.com)
+* Search for **"Subscriptions"**
+* Select the subscription
+* Click **"Cancel subscription"**
+
+Let me know if you’re dealing with CSP, MCA, EA, or legacy subscriptions — I can tailor the steps.
+
+
 Here's an example automation script that **creates and executes a remediation task** in **Azure Policy**, using a **User Assigned Managed Identity (UAMI)** to **authenticate and remediate non-compliant resources**.
 
 ---
