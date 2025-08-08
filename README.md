@@ -19,7 +19,7 @@ flowchart TB
 
     subgraph DNSR["Azure DNS Private Resolver"]
       direction TB
-      INEP[[Inbound Endpoint (UDP/TCP 53)]]
+      INEP[[Inbound Endpoint UDP/TCP 53]]
       OUEP[[Outbound Endpoint]]
       RULES{{Forwarding Ruleset<br/>(e.g., *.privatelink.*)}}
     end
