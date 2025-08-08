@@ -1,5 +1,77 @@
 In Azure, **you cannot directly remove yourself as the Owner of a subscription** unless **another user or service principal has Owner access** to that subscription. Azure enforces this to ensure that there is always at least one Owner with full control.
 
+
+Sweet — I’ll prep both diagrams. Do you want **PNG or SVG** exports? (SVG is crisp at any size.)
+
+In the meantime, here’s a **Hub & Spoke architecture** Mermaid diagram that pairs with the sequence one:
+
+```mermaid
+flowchart TB
+  subgraph OnPrem["On-Premises"]
+    ONDNS[On-prem DNS]
+    ONNET[On-prem Network]
+  end
+
+  subgraph Hub["Hub VNet"]
+    direction TB
+    HPE1[(Private Endpoint<br/>PaaS #1)]
+    HPE2[(Private Endpoint<br/>PaaS #2)]
+
+    subgraph DNSR["Azure DNS Private Resolver"]
+      direction TB
+      INEP[[Inbound Endpoint (UDP/TCP 53)]]
+      OUEP[[Outbound Endpoint]]
+      RULES{{Forwarding Ruleset<br/>(e.g., *.privatelink.*)}}
+    end
+
+    subgraph PDZ["Private DNS Zones"]
+      Z1[privatelink.database.windows.net]
+      Z2[privatelink.blob.core.windows.net]
+    end
+  end
+
+  subgraph SpokeA["Spoke VNet A"]
+    AVM[VM / Workload]
+    APE[(Private Endpoint<br/>App A)]
+  end
+
+  subgraph SpokeB["Spoke VNet B"]
+    BVM[VM / Workload]
+    BPE[(Private Endpoint<br/>App B)]
+  end
+
+  %% Peering
+  SpokeA <--> Hub
+  SpokeB <--> Hub
+  OnPrem <-- ER/VPN --> Hub
+
+  %% DNS flow
+  AVM -- DNS to Inbound IP --> INEP
+  BVM -- DNS to Inbound IP --> INEP
+  ONDNS -- Conditional Forwarders --> INEP
+
+  INEP --> DNSR
+  DNSR --> RULES
+
+  RULES -- Matches privatelink.* --> OUEP
+  OUEP --> PDZ
+  PDZ --> OUEP
+  OUEP --> DNSR
+  DNSR --> INEP
+  INEP --> AVM
+  INEP --> BVM
+  INEP --> ONDNS
+
+  %% Records & endpoints
+  Z1 --- HPE1
+  Z2 --- HPE2
+  Z1 --- APE
+  Z2 --- BPE
+```
+
+Tell me **PNG or SVG**, and whether you want **just the sequence diagram**, **just the architecture**, or **both** exported. I’ll generate the files right away.
+
+
 However, you can remove yourself **indirectly**, by having another Owner remove your access.
 
 ### 🔁 Option 1: **Another Owner removes you**
