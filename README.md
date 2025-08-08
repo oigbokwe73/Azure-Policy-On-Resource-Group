@@ -1,5 +1,67 @@
 In Azure, **you cannot directly remove yourself as the Owner of a subscription** unless **another user or service principal has Owner access** to that subscription. Azure enforces this to ensure that there is always at least one Owner with full control.
 
+Here is a **detailed Mermaid sequence diagram** that shows the DNS resolution flow for a Private Endpoint (`<name>.privatelink.database.windows.net`) from a VM in a **spoke VNet**, using a **centralized Azure DNS Private Resolver** in a **hub VNet**:
+
+---
+
+### ✅ **Mermaid Sequence Diagram**
+
+```mermaid
+sequenceDiagram
+    participant VM as VM in Spoke VNet A
+    participant SubnetDNS as Custom DNS (Inbound Endpoint IP)
+    participant HubDNS as Azure DNS Private Resolver (Hub VNet)
+    participant Outbound as Outbound Endpoint
+    participant Forwarding as Forwarding Ruleset
+    participant AzureDNS as Azure DNS (168.63.129.16)
+    participant PrivateZone as Private DNS Zone (Hub VNet)
+
+    %% Step 1: VM sends DNS query
+    VM->>SubnetDNS: DNS Query: name.privatelink.database.windows.net
+
+    %% Step 2: Inbound endpoint receives the query
+    SubnetDNS->>HubDNS: Forwards query to resolver engine
+
+    %% Step 3: Resolver checks forwarding rules
+    HubDNS->>Forwarding: Match rule for privatelink.database.windows.net
+
+    %% Step 4: Forwarding rule sends to Azure DNS
+    Forwarding->>Outbound: Forward query
+    Outbound->>AzureDNS: Query: name.privatelink.database.windows.net
+
+    %% Step 5: Azure DNS checks Private DNS Zone (linked to hub)
+    AzureDNS->>PrivateZone: Resolve private link record
+    PrivateZone-->>AzureDNS: Returns private IP (e.g. 10.10.5.4)
+
+    %% Step 6: Azure DNS returns to outbound endpoint
+    AzureDNS-->>Outbound: IP: 10.10.5.4
+
+    %% Step 7: Outbound endpoint to resolver
+    Outbound-->>HubDNS: IP: 10.10.5.4
+
+    %% Step 8: Resolver returns answer to VM
+    HubDNS-->>SubnetDNS: IP: 10.10.5.4
+    SubnetDNS-->>VM: IP: 10.10.5.4
+```
+
+---
+
+### 🧠 **Explanation**
+
+| Step | Description                                                                                                |
+| ---- | ---------------------------------------------------------------------------------------------------------- |
+| 1    | VM sends a DNS request (usually via `/etc/resolv.conf` or NIC DNS setting) to the **inbound endpoint IP**  |
+| 2    | Inbound endpoint relays it to the Azure DNS Private Resolver                                               |
+| 3    | Resolver uses a **forwarding ruleset** to check which DNS server should handle the domain                  |
+| 4    | Since the domain matches `*.privatelink.database.windows.net`, it’s forwarded to Azure DNS (168.63.129.16) |
+| 5    | Azure DNS checks the **Private DNS Zone** linked to the hub                                                |
+| 6-8  | IP address is returned step-by-step back to the original VM                                                |
+
+---
+
+Would you like this exported as an SVG or PNG for presentation purposes? I can also provide a **Hub & Spoke network architecture diagram** that complements this sequence.
+
+
 
 Sweet — I’ll prep both diagrams. Do you want **PNG or SVG** exports? (SVG is crisp at any size.)
 
