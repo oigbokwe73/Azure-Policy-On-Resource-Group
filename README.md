@@ -1,3 +1,54 @@
+To create an **Azure role assignment with a condition that limits its activation to one year**, you use the `--condition` and `--condition-version` flags in `az role assignment create`.
+
+Azure role assignment conditions are expressed using a [Common Expression Language (CEL)](https://learn.microsoft.com/en-us/azure/role-based-access-control/role-assignments-conditions), and you **must use condition version `2.0`** to support **date-based conditions**.
+
+---
+
+### ✅ Azure CLI: Role Assignment Valid for One Year
+
+```bash
+# Variables
+MG_NAME="your-management-group-name"
+PRINCIPAL_ID="00000000-0000-0000-0000-000000000000"  # Object ID of user, SPN, or MI
+ROLE_NAME="Contributor"                              # or any role
+SCOPE="/providers/Microsoft.Management/managementGroups/$MG_NAME"
+
+# Dates
+NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+ONE_YEAR_LATER=$(date -u -d "+1 year" +"%Y-%m-%dT%H:%M:%SZ")
+
+# Condition expression
+CONDITION="@requestTime >= timestamp('$NOW') && @requestTime <= timestamp('$ONE_YEAR_LATER')"
+
+# Create the role assignment
+az role assignment create \
+  --assignee-object-id "$PRINCIPAL_ID" \
+  --assignee-principal-type ServicePrincipal \
+  --role "$ROLE_NAME" \
+  --scope "$SCOPE" \
+  --condition "$CONDITION" \
+  --condition-version "2.0"
+```
+
+---
+
+### 🔎 What This Does
+
+* **`--condition`**: Specifies a CEL expression that limits when the role can be used.
+* **`@requestTime`**: Is a special variable representing the time of the access request.
+* This limits the assignment to only be valid between **now** and **+1 year** from now.
+
+---
+
+### 📌 Notes
+
+* `--condition` applies to **runtime evaluation**, not creation time. So the role still exists after 1 year, but any **access attempt** after that will be denied.
+* This works only for Azure **RBAC condition-aware roles**.
+* For service principals or user-assigned managed identities, use `--assignee-principal-type ServicePrincipal`.
+
+---
+
+Let me know if you want this to be scoped at **subscription**, **resource group**, or **resource** level instead.
 
 To create a **time-bound role assignment** (e.g., valid for one year) using **Azure CLI** with **Azure role-based access control (RBAC) conditions**, you must use **Azure PIM (Privileged Identity Management)** or assign a **conditional access role assignment** using a **`--condition`** and **`--expires-on`** parameter (preview feature).
 
