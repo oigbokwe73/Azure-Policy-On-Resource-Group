@@ -1,3 +1,77 @@
+
+To create a **time-bound role assignment** (e.g., valid for one year) using **Azure CLI** with **Azure role-based access control (RBAC) conditions**, you must use **Azure PIM (Privileged Identity Management)** or assign a **conditional access role assignment** using a **`--condition`** and **`--expires-on`** parameter (preview feature).
+
+Below is a complete example using the **preview features of Azure CLI**:
+
+---
+
+### ✅ Step-by-Step: Time-Bound Role Assignment (1 Year)
+
+> ❗ **Preview feature**: You must register the feature and use `az role assignment create --assignee-object-id` with `--expires-on`.
+
+---
+
+### 📌 1. Register the Preview Feature (If Not Already Done)
+
+```bash
+az feature register --name ExpiringAccessAssignments --namespace Microsoft.Authorization
+az provider register --namespace Microsoft.Authorization
+```
+
+---
+
+### 📌 2. Script to Create Time-Bound Role Assignment (1 Year)
+
+```bash
+# Variables
+MG_NAME="your-management-group-name"
+MG_SCOPE="/providers/Microsoft.Management/managementGroups/$MG_NAME"
+PRINCIPAL_ID="00000000-0000-0000-0000-000000000000"  # Object ID of user, MI, or service principal
+ROLE_NAME="Storage Table Data Contributor"           # Or any other built-in/custom role
+
+# Expiry Date (1 year from now)
+EXPIRES_ON=$(date -u -d "+1 year" +"%Y-%m-%dT%H:%M:%SZ")
+
+# Assign the role with expiration
+az role assignment create \
+  --assignee-object-id $PRINCIPAL_ID \
+  --assignee-principal-type ServicePrincipal \
+  --role "$ROLE_NAME" \
+  --scope "$MG_SCOPE" \
+  --expires-on "$EXPIRES_ON"
+```
+
+---
+
+### 📌 3. Optional: Add a Condition to Limit Permissions Further
+
+You can also include a **custom RBAC condition** using `--condition` and `--condition-version`. For example:
+
+```bash
+--condition "@Resource[Microsoft.Storage/storageAccounts/blobServices/containers:name] StringEquals 'mycontainer'"
+--condition-version "2.0"
+```
+
+---
+
+### 📌 4. Check Expiring Role Assignments
+
+```bash
+az role assignment list --include-expired --all --output table
+```
+
+---
+
+### 🔐 Notes
+
+* This works **only for Azure AD-based principals**, not for Microsoft accounts.
+* **`--expires-on`** is available in **`az role assignment create`**, **Azure CLI v2.43+**, and may still require preview registration in some tenants.
+* You can also use the [`az role assignment update`](https://learn.microsoft.com/en-us/cli/azure/role/assignment?view=azure-cli-latest#az-role-assignment-update) command to **modify** the expiration.
+
+---
+
+Would you like a version of this for **Azure Resource Group** scope instead of Management Group?
+
 Azure CLI now supports **time-bound role assignments** using the `--start-date` and `--end-date` flags via the Microsoft Graph API.
 
 ---
