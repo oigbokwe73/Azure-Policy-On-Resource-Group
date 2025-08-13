@@ -1,3 +1,56 @@
+To assign an **Azure RBAC role** with a **specific expiration period (e.g., 1 year)**, you must use **Azure PIM (Privileged Identity Management)** or the **Azure `az role assignment create` with `--assignment-schedule`** functionality that supports **time-bound assignments**. This is part of **Azure Role Assignment with Conditions** via **Microsoft Graph** or the **Azure CLI**.
+
+### ✅ Azure CLI: Assign Role with Expiration (Assignment Type + 1-Year Duration)
+
+```bash
+# Variables
+ASSIGNEE_OBJECT_ID="00000000-0000-0000-0000-000000000000"  # Managed Identity or User Object ID
+ROLE_NAME="Storage Table Data Contributor"
+SCOPE="/subscriptions/<sub-id>/resourceGroups/<rg-name>"  # or management group scope
+START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+END_TIME=$(date -u -d "+365 days" +"%Y-%m-%dT%H:%M:%SZ")
+
+# Create the role assignment with a schedule (requires az CLI version >= 2.45.0)
+az role assignment schedule create \
+  --assignee-object-id "$ASSIGNEE_OBJECT_ID" \
+  --assignee-principal-type ServicePrincipal \
+  --role "$ROLE_NAME" \
+  --scope "$SCOPE" \
+  --start-date-time "$START_TIME" \
+  --end-date-time "$END_TIME" \
+  --assignment-schedule-type "Assigned"
+```
+
+---
+
+### 🔍 Requirements
+
+* Azure CLI **v2.45.0 or higher**
+* The feature is supported in **Microsoft.Authorization/roleAssignmentScheduleRequests** API.
+* You **must enable Azure AD PIM** or **Privileged Access Management** to create time-bound RBAC assignments on scopes like **subscriptions, resource groups**, or **management groups**.
+
+---
+
+### 📌 Notes
+
+* `--assignment-schedule-type` can be one of:
+
+  * `Assigned` – regular assignment
+  * `Activated` – temporary activation (used in PIM scenarios)
+* `--principal-type`:
+
+  * Use `User`, `ServicePrincipal`, or `Group` accordingly.
+* For **Management Group**:
+
+  ```bash
+  --scope "/providers/Microsoft.Management/managementGroups/<mg-name>"
+  ```
+
+---
+
+Would you like the same thing done via **PowerShell**, **Microsoft Graph**, or in **Terraform**?
+
+
 To create an **Azure role assignment with a condition that limits its activation to one year**, you use the `--condition` and `--condition-version` flags in `az role assignment create`.
 
 Azure role assignment conditions are expressed using a [Common Expression Language (CEL)](https://learn.microsoft.com/en-us/azure/role-based-access-control/role-assignments-conditions), and you **must use condition version `2.0`** to support **date-based conditions**.
