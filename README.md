@@ -1,4 +1,10 @@
+Here is an example of an **Azure CLI script** to assign an **RBAC role at the Management Group level**, useful when you want to assign a Managed Identity (or user/service principal) access to all resources under a management group.
 
+---
+
+### ✅ AZ CLI Script: Assign RBAC at Management Group Level
+
+```bash
 # Variables
 MG_NAME="your-management-group-name"
 PRINCIPAL_ID="00000000-0000-0000-0000-000000000000"  # Object ID of the managed identity, user, or service principal
@@ -13,6 +19,31 @@ az role assignment create \
   --assignee-principal-type ServicePrincipal \
   --role "$ROLE_NAME" \
   --scope "$MG_SCOPE"
+```
+
+---
+
+### 📌 Notes
+
+* **`--assignee-object-id`** is the Object ID of the identity.
+
+* If you're assigning to a **user-assigned managed identity**, ensure you're using the **object ID**, not the client ID.
+
+* You can retrieve the object ID of a user-assigned managed identity using:
+
+  ```bash
+  az identity show \
+    --name my-identity \
+    --resource-group my-rg \
+    --query principalId \
+    --output tsv
+  ```
+
+* If assigning to a **user** or **app registration**, adjust the principal type accordingly (`User`, `ServicePrincipal`, etc.).
+
+---
+
+Would you like the script to be converted into PowerShell or used in a Bicep/Terraform template?
 
 
 
