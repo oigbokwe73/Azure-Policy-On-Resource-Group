@@ -1,3 +1,21 @@
+
+# Variables
+MG_NAME="your-management-group-name"
+PRINCIPAL_ID="00000000-0000-0000-0000-000000000000"  # Object ID of the managed identity, user, or service principal
+ROLE_NAME="Storage Table Data Contributor"           # Or another role, like Contributor, Reader, etc.
+
+# Get the scope for the management group
+MG_SCOPE="/providers/Microsoft.Management/managementGroups/$MG_NAME"
+
+# Create the role assignment
+az role assignment create \
+  --assignee-object-id $PRINCIPAL_ID \
+  --assignee-principal-type ServicePrincipal \
+  --role "$ROLE_NAME" \
+  --scope "$MG_SCOPE"
+
+
+
 In Azure, **you cannot directly remove yourself as the Owner of a subscription** unless **another user or service principal has Owner access** to that subscription. Azure enforces this to ensure that there is always at least one Owner with full control.
 
 Here is a **detailed Mermaid sequence diagram** that shows the DNS resolution flow for a Private Endpoint (`<name>.privatelink.database.windows.net`) from a VM in a **spoke VNet**, using a **centralized Azure DNS Private Resolver** in a **hub VNet**:
