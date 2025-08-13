@@ -1,3 +1,56 @@
+Azure CLI now supports **time-bound role assignments** using the `--start-date` and `--end-date` flags via the Microsoft Graph API.
+
+---
+
+### ✅ Example: `az role assignment create` with Time-Bound Access
+
+```bash
+# Variables
+MG_NAME="your-management-group-name"
+PRINCIPAL_ID="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Object ID of user or managed identity
+ROLE_NAME="Storage Table Data Contributor"
+MG_SCOPE="/providers/Microsoft.Management/managementGroups/$MG_NAME"
+
+# Time-bound role assignment (ISO 8601 format)
+START_DATE="2025-08-13T00:00:00Z"
+END_DATE="2025-08-20T23:59:59Z"
+
+# Create the role assignment
+az role assignment create \
+  --assignee-object-id $PRINCIPAL_ID \
+  --assignee-principal-type ServicePrincipal \
+  --role "$ROLE_NAME" \
+  --scope "$MG_SCOPE" \
+  --start-date "$START_DATE" \
+  --end-date "$END_DATE"
+```
+
+---
+
+### 🔐 Notes
+
+* `--start-date` and `--end-date` must be in **UTC ISO 8601** format: `YYYY-MM-DDTHH:MM:SSZ`
+* `--assignee-principal-type` can be:
+
+  * `User`
+  * `ServicePrincipal`
+  * `Group`
+  * `ForeignGroup`
+  * `Device`
+
+---
+
+### 💡 Prerequisites
+
+1. **Microsoft.Authorization/roleAssignments/write** permissions at the target scope.
+2. Ensure you are using **Azure CLI ≥ 2.45.0**
+3. You must be **Azure AD Role Administrator** or **Privileged Role Administrator** to assign time-bound roles using PIM (Privileged Identity Management).
+
+---
+
+Would you like a version that uses **Azure AD group** or scoped to **subscription/resource group** instead?
+
+
 Here is an example of an **Azure CLI script** to assign an **RBAC role at the Management Group level**, useful when you want to assign a Managed Identity (or user/service principal) access to all resources under a management group.
 
 ---
